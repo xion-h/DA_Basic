@@ -1,0 +1,537 @@
+import React, { useState, useMemo } from 'react';
+import { 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
+  BarChart, Bar, Cell, PieChart, Pie 
+} from 'recharts';
+import { 
+  AlertCircle, TrendingDown, Users, Clock, Coffee, CheckCircle2, 
+  ArrowRight, ArrowLeft, Search, Database, Activity, HelpCircle, 
+  DollarSign, Table, X, Info
+} from 'lucide-react';
+
+const App = () => {
+  const [stage, setStage] = useState(0);
+  const [selectedPath, setSelectedPath] = useState(null);
+  const [selectedSegment, setSelectedSegment] = useState(null);
+  const [finalDecision, setFinalDecision] = useState(null);
+  const [judgment, setJudgment] = useState({ stage1: null, stage5: null });
+  const [errorFeedback, setErrorFeedback] = useState("");
+  const [showDataSheet, setShowDataSheet] = useState(false);
+
+  // --- 1. 정제된 전체 데이터셋 ---
+  const rawData = useMemo(() => [
+    { month: '1월', rev: 5000, cost: 3500, profit: 1500, newCust: 1200, oldCust: 3800, waitTime: 8 },
+    { month: '2월', rev: 4800, cost: 3600, profit: 1200, newCust: 1150, oldCust: 3650, waitTime: 9 },
+    { month: '3월', rev: 4200, cost: 3700, profit: 500,  newCust: 1250, oldCust: 2950, waitTime: 12 },
+    { month: '4월', rev: 3800, cost: 3800, profit: 0,    newCust: 1200, oldCust: 2600, waitTime: 15 },
+    { month: '5월', rev: 3400, cost: 3900, profit: -500, newCust: 1300, oldCust: 2100, waitTime: 18 },
+    { month: '6월', rev: 3100, cost: 4000, profit: -900, newCust: 1280, oldCust: 1820, waitTime: 22 },
+  ], []);
+
+  const revenueBreakdown = [
+    { name: '신규 고객 매출', value: 1280, fill: '#94a3b8' },
+    { name: '재방문 고객 매출', value: 1820, fill: '#f43f5e' },
+  ];
+
+  const steps = [
+    "진단: 현상 파악", 
+    "분해: 원인 식별", 
+    "심화: 세부 지표", 
+    "추출: 가설 설계", 
+    "통찰: 인과 관계", 
+    "실행: 의사 결정"
+  ];
+
+  // --- 유틸리티 함수 ---
+  const nextStage = () => { setErrorFeedback(""); setStage(prev => prev + 1); };
+  const prevStage = () => { setErrorFeedback(""); setStage(prev => Math.max(0, prev - 1)); };
+  const reset = () => {
+    setStage(0); setSelectedPath(null); setSelectedSegment(null);
+    setFinalDecision(null); setJudgment({ stage1: null, stage5: null });
+    setErrorFeedback(""); setShowDataSheet(false);
+  };
+
+  // --- 공통 UI 컴포넌트 ---
+  const StepProgress = () => (
+    <div className="w-full bg-slate-900 text-white p-4 border-b border-slate-700">
+      <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-amber-500 rounded-lg shadow-lg shadow-amber-500/20"><Coffee size={20} /></div>
+          <div>
+            <h1 className="text-lg font-black tracking-tighter italic">DATA DETECTIVE</h1>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Cafe Crisis Solution</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {steps.map((s, i) => (
+            <div key={i} className="flex items-center">
+              <div className={`h-1.5 w-8 rounded-full transition-all ${stage > i ? 'bg-emerald-500' : stage === i + 1 ? 'bg-amber-500 w-12' : 'bg-slate-700'}`} />
+              {i < steps.length - 1 && <div className="w-1" />}
+            </div>
+          ))}
+        </div>
+        <div className="text-[11px] font-black text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 uppercase">
+          Step {stage}: {steps[stage-1]}
+        </div>
+      </div>
+    </div>
+  );
+
+  const DataSheetModal = () => (
+    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-6 transition-all ${showDataSheet ? 'visible opacity-100' : 'invisible opacity-0'}`}>
+      <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowDataSheet(false)} />
+      <div className="relative w-full max-w-4xl bg-white rounded-[32px] shadow-2xl overflow-hidden border border-slate-200">
+        <div className="p-6 border-b flex justify-between items-center bg-slate-50">
+          <h3 className="font-black text-slate-800 flex items-center gap-2"><Table size={20} className="text-indigo-600"/> 전체 비즈니스 로우 데이터 (Raw Data)</h3>
+          <button onClick={() => setShowDataSheet(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X size={20}/></button>
+        </div>
+        <div className="p-8 overflow-auto max-h-[60vh]">
+          <table className="w-full text-left text-sm border-collapse">
+            <thead>
+              <tr className="border-b-2 border-slate-200">
+                <th className="p-3 font-black text-slate-400 uppercase tracking-widest">월별</th>
+                <th className="p-3 font-black text-slate-400 uppercase tracking-widest">매출(만)</th>
+                <th className="p-3 font-black text-slate-400 uppercase tracking-widest">비용(만)</th>
+                <th className="p-3 font-black text-slate-400 uppercase tracking-widest text-indigo-600">이익(만)</th>
+                <th className="p-3 font-black text-slate-400 uppercase tracking-widest">신규매출</th>
+                <th className="p-3 font-black text-slate-400 uppercase tracking-widest">재방문매출</th>
+                <th className="p-3 font-black text-slate-400 uppercase tracking-widest text-amber-600">대기시간(분)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rawData.map((d, i) => (
+                <tr key={i} className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${d.profit < 0 ? 'bg-red-50/50' : ''}`}>
+                  <td className="p-3 font-bold">{d.month}</td>
+                  <td className="p-3 font-mono">{d.rev.toLocaleString()}</td>
+                  <td className="p-3 font-mono">{d.cost.toLocaleString()}</td>
+                  <td className={`p-3 font-black font-mono ${d.profit < 0 ? 'text-red-600' : 'text-indigo-600'}`}>{d.profit.toLocaleString()}</td>
+                  <td className="p-3 font-mono">{d.newCust}</td>
+                  <td className="p-3 font-mono">{d.oldCust}</td>
+                  <td className="p-3 font-mono font-bold text-amber-600">{d.waitTime}m</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-2xl flex gap-3 italic text-sm text-blue-800">
+            <Info size={18} className="shrink-0" />
+            <p>이 데이터는 실제 카페 POS 시스템과 회계 장부에서 추출된 요약본입니다. 숫자를 통해 현상 뒤에 숨겨진 패턴을 읽어내야 합니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // --- Stage 렌더링 ---
+
+  if (stage === 0) return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div className="max-w-xl w-full bg-white rounded-[48px] shadow-2xl p-16 text-center border border-slate-100">
+        <div className="w-24 h-24 bg-amber-100 rounded-[32px] flex items-center justify-center mx-auto mb-10 shadow-lg shadow-amber-100 rotate-6 animate-pulse">
+          <Search size={48} className="text-amber-600" />
+        </div>
+        <h2 className="text-5xl font-black text-slate-900 mb-6 tracking-tighter italic">"The Insight"</h2>
+        <p className="text-slate-600 mb-12 leading-relaxed text-lg font-medium">
+          데이터 시뮬레이션에 오신 것을 환영합니다.<br/>
+          당신은 이제부터 데이터로 증거를 찾는 탐정입니다.<br/>
+          <span className="text-indigo-600 font-bold underline underline-offset-4">정확한 판단</span>만이 폐업 위기의 카페를 살릴 수 있습니다.
+        </p>
+        <button onClick={nextStage} className="w-full bg-slate-900 text-white py-6 rounded-[24px] font-black text-2xl hover:bg-slate-800 transition-all active:scale-95 shadow-2xl shadow-slate-200 uppercase tracking-widest italic">Game Start</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
+      <StepProgress />
+      <DataSheetModal />
+
+      <main className="flex-1 p-6 md:p-10 max-w-6xl mx-auto w-full flex flex-col gap-8 pb-32 overflow-auto">
+        
+        {/* Stage 1: Diagnosis */}
+        {stage === 1 && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex flex-col md:flex-row justify-between items-end gap-4">
+              <div className="space-y-1">
+                <h2 className="text-4xl font-black tracking-tighter italic">1. 비즈니스 헬스 체크</h2>
+                <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Monthly Revenue vs Total Cost Trend</p>
+              </div>
+              <button onClick={() => setShowDataSheet(true)} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 uppercase tracking-widest italic"><Table size={14}/> Open Data Sheet</button>
+            </div>
+
+            <div className="bg-white p-8 rounded-[40px] shadow-sm border border-slate-200">
+              <div className="h-80 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={rawData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 700, fill: '#64748b'}} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} />
+                    <Tooltip contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }} />
+                    <Legend verticalAlign="top" align="right" height={40} iconType="circle" />
+                    <Line type="monotone" dataKey="rev" name="매출액" stroke="#6366f1" strokeWidth={5} dot={{r: 8, strokeWidth: 4, stroke: '#fff'}} />
+                    <Line type="monotone" dataKey="cost" name="총 비용" stroke="#94a3b8" strokeWidth={3} strokeDasharray="10 10" />
+                    <Line type="monotone" dataKey="profit" name="영업이익" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 rounded-[32px] p-10 text-white shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-10"><HelpCircle size={120}/></div>
+              <h3 className="text-amber-500 font-black mb-6 uppercase tracking-widest text-xs italic">Data Analysis Quiz</h3>
+              <p className="text-2xl font-bold mb-10 leading-relaxed">차트를 분석하십시오. 매출이 비용보다 낮아지며 <span className="text-red-400 underline decoration-4 underline-offset-8">실질적인 적자(Loss)</span>가 시작된 달은 언제입니까?</p>
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                {rawData.map(d => (
+                  <button key={d.month} onClick={() => setJudgment({...judgment, stage1: d.month})} className={`py-4 rounded-2xl border-2 font-black transition-all ${judgment.stage1 === d.month ? 'border-amber-500 bg-amber-500/10' : 'border-slate-700 hover:border-slate-500'}`}>{d.month}</button>
+                ))}
+              </div>
+              {errorFeedback && <div className="mt-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex gap-3 text-red-400 text-sm font-bold animate-bounce"><AlertCircle size={18}/> {errorFeedback}</div>}
+              <button 
+                onClick={() => {
+                  if (judgment.stage1 === '5월') nextStage();
+                  else if (judgment.stage1 === '4월') setErrorFeedback("4월은 매출과 비용이 3,800만원으로 동일한 '손익분기점'입니다. 적자가 시작된 달은 다음 달입니다.");
+                  else setErrorFeedback("데이터를 다시 확인하세요. 이익(Profit) 지표가 0보다 작아지는 시점을 찾아보십시오.");
+                }} 
+                className="w-full mt-10 bg-white text-slate-900 py-5 rounded-2xl font-black text-lg shadow-xl shadow-white/5 disabled:opacity-20 active:scale-95 transition-all"
+                disabled={!judgment.stage1}
+              >
+                판단 확정 및 다음 단계
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Stage 2: Driver Decomposition */}
+        {stage === 2 && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h2 className="text-4xl font-black tracking-tighter italic">2. 원인 드라이버 식별</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className={`p-10 rounded-[40px] border-4 transition-all cursor-pointer ${selectedPath === 'rev' ? 'border-indigo-500 bg-white shadow-2xl scale-[1.02]' : 'border-slate-100 bg-white opacity-60'}`} onClick={() => setSelectedPath('rev')}>
+                <div className="flex justify-between items-start mb-6">
+                  <div className="p-4 bg-indigo-100 text-indigo-600 rounded-2xl"><DollarSign size={32}/></div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Impact Analysis</p>
+                    <p className="text-3xl font-black text-red-600">-38.0% <span className="text-xs text-slate-400 font-bold uppercase">Fall</span></p>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-black mb-4 italic">수익성 하락 (Revenue Fall)</h3>
+                <p className="text-slate-500 font-medium leading-relaxed">
+                  1월 5,000만원에서 6월 3,100만원으로 급격히 매출이 줄어들었습니다. <br/>
+                  이는 비즈니스의 기초 체력이 무너지고 있음을 뜻합니다.
+                </p>
+              </div>
+
+              <div className={`p-10 rounded-[40px] border-4 transition-all cursor-pointer ${selectedPath === 'cost' ? 'border-amber-500 bg-white shadow-2xl scale-[1.02]' : 'border-slate-100 bg-white opacity-60'}`} onClick={() => setSelectedPath('cost')}>
+                <div className="flex justify-between items-start mb-6">
+                  <div className="p-4 bg-amber-100 text-amber-600 rounded-2xl"><TrendingDown size={32} className="rotate-180"/></div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cost Analysis</p>
+                    <p className="text-3xl font-black text-amber-600">+14.2% <span className="text-xs text-slate-400 font-bold uppercase">Rise</span></p>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-black mb-4 italic">비용 상승 (Cost Rise)</h3>
+                <p className="text-slate-500 font-medium leading-relaxed">
+                  1월 3,500만원에서 6월 4,000만원으로 비용이 상승했습니다. <br/>
+                  하지만 매출 하락폭(-38%)에 비하면 상대적으로 낮은 영향력입니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 rounded-[32px] p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6">
+              <p className="text-lg font-bold text-center md:text-left italic">
+                적자의 가장 <span className="text-red-400 underline decoration-2 underline-offset-4">결정적인 원인(Primary Driver)</span>은 무엇입니까?
+              </p>
+              <div className="flex gap-4 w-full md:w-auto">
+                <button onClick={prevStage} className="px-8 py-4 rounded-xl font-bold text-slate-500 hover:text-white transition-all flex items-center gap-2"><ArrowLeft size={18}/> 이전</button>
+                <button 
+                  onClick={() => {
+                    if (selectedPath === 'rev') nextStage();
+                    else setErrorFeedback("비용이 상승한 것은 사실이나, 매출 하락의 규모(-1,900만원)가 비용 상승 규모(+500만원)보다 훨씬 큽니다. 더 큰 '레버리지'를 찾으세요.");
+                  }} 
+                  className="px-12 py-4 bg-white text-slate-900 rounded-xl font-black transition-all hover:bg-slate-100 active:scale-95 disabled:opacity-20 shadow-xl"
+                  disabled={!selectedPath}
+                >
+                  다음 단계로 <ArrowRight size={18}/>
+                </button>
+              </div>
+            </div>
+            {errorFeedback && <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-600 font-bold text-sm text-center animate-in slide-in-from-top-2">{errorFeedback}</div>}
+          </div>
+        )}
+
+        {/* Stage 3: Drill-down */}
+        {stage === 3 && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h2 className="text-4xl font-black tracking-tighter italic">3. 매출 세그먼트 드릴다운</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center bg-white p-12 rounded-[48px] border border-slate-200">
+              <div className="flex flex-col items-center">
+                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-10 italic">6월 매출 구성 (Revenue Structure)</h4>
+                <div className="h-72 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={revenueBreakdown}
+                        innerRadius={80}
+                        outerRadius={110}
+                        paddingAngle={10}
+                        dataKey="value"
+                        animationDuration={1500}
+                      >
+                        {revenueBreakdown.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} stroke="none" />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend verticalAlign="bottom" height={36}/>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div className={`p-8 rounded-[32px] border-4 transition-all cursor-pointer ${selectedSegment === 'new' ? 'border-indigo-500 bg-indigo-50 shadow-xl' : 'border-slate-50 bg-slate-50 opacity-60'}`} onClick={() => setSelectedSegment('new')}>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="font-black text-slate-800">신규 고객 매출</span>
+                    <span className="text-[10px] bg-emerald-500 text-white px-2 py-1 rounded-full font-bold uppercase">Stable</span>
+                  </div>
+                  <p className="text-3xl font-black text-slate-900 mb-2">1,280만원</p>
+                  <p className="text-xs text-slate-500 font-medium italic">"1월(1,200만) 대비 오히려 소폭 상승했습니다. 유입은 문제가 없습니다."</p>
+                </div>
+                <div className={`p-8 rounded-[32px] border-4 transition-all cursor-pointer ${selectedSegment === 'old' ? 'border-indigo-500 bg-indigo-50 shadow-xl' : 'border-slate-50 bg-slate-50 opacity-60'}`} onClick={() => setSelectedSegment('old')}>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="font-black text-slate-800">재방문 단골 고객 매출</span>
+                    <span className="text-[10px] bg-red-500 text-white px-2 py-1 rounded-full font-bold uppercase tracking-tighter">Critical Fall</span>
+                  </div>
+                  <p className="text-3xl font-black text-slate-900 mb-2">1,820만원</p>
+                  <p className="text-xs text-slate-500 font-medium italic">"1월(3,800만) 대비 52%나 실종되었습니다. 단골들이 카페를 떠났습니다."</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 rounded-[32px] p-8 text-white flex flex-col items-center">
+              <p className="text-xl font-bold mb-8 italic text-center">어떤 데이터 포인트에서 '비즈니스의 균열'이 시작되었습니까?</p>
+              <div className="flex gap-4 w-full justify-center">
+                <button 
+                  onClick={() => {
+                    if (selectedSegment === 'old') nextStage();
+                    else setErrorFeedback("신규 유입 데이터는 6개월 내내 매우 안정적입니다. 진짜 매출이 '사라진 곳'을 차트에서 다시 판독하세요.");
+                  }} 
+                  className="bg-white text-slate-900 px-16 py-5 rounded-2xl font-black shadow-xl hover:bg-slate-100 active:scale-95 transition-all"
+                  disabled={!selectedSegment}
+                >
+                  원인 파악 완료
+                </button>
+              </div>
+              {errorFeedback && <p className="mt-4 text-red-400 font-bold text-sm animate-pulse">{errorFeedback}</p>}
+            </div>
+          </div>
+        )}
+
+        {/* Stage 4: Query Builder */}
+        {stage === 4 && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h2 className="text-4xl font-black tracking-tighter italic uppercase">4. 가설 검증 및 쿼리 추출</h2>
+            <div className="flex flex-col lg:flex-row gap-8">
+              <div className="flex-1 bg-white rounded-[40px] border border-slate-200 p-10 shadow-sm flex flex-col">
+                <h4 className="font-black text-slate-800 mb-10 flex items-center gap-2 uppercase tracking-widest text-xs italic"><Database size={20} className="text-indigo-500"/> Data Analytics Workbench</h4>
+                <div className="space-y-10 flex-1">
+                  <section>
+                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Dimension (Group By)</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['시간대별', '메뉴별', '요일별'].map(d => (
+                        <button key={d} className="px-6 py-3 rounded-2xl border-2 border-slate-100 hover:border-indigo-500 font-black text-xs transition-all focus:bg-indigo-600 focus:text-white">
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                  <section>
+                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Metric (Aggregate)</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['평균 대기시간', '주문 건수', '재방문율'].map(m => (
+                        <button key={m} className="px-6 py-3 rounded-2xl border-2 border-slate-100 hover:border-indigo-500 font-black text-xs transition-all focus:bg-indigo-600 focus:text-white">
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                  <div className="p-8 bg-slate-900 rounded-[32px] font-mono text-sm leading-relaxed border-l-[12px] border-amber-500 relative group overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl" />
+                    <p className="text-indigo-400 opacity-60 mb-2 italic">// Business Hypothesis Validation</p>
+                    <p className="text-white"><span className="text-amber-400 font-bold uppercase">SELECT</span> Time_Hour, <span className="text-indigo-300">AVG</span>(Wait_Time)</p>
+                    <p className="text-white"><span className="text-amber-400 font-bold uppercase">FROM</span> Customer_Log</p>
+                    <p className="text-white"><span className="text-amber-400 font-bold uppercase">WHERE</span> Outcome = 'Lost_Customer'</p>
+                  </div>
+                </div>
+                <button onClick={nextStage} className="mt-12 bg-indigo-600 text-white py-5 rounded-[24px] font-black text-lg hover:bg-indigo-700 shadow-2xl shadow-indigo-200 transition-all active:scale-95">추출 모델 가동 (Execute Analysis)</button>
+              </div>
+              <div className="w-full lg:w-1/3 bg-slate-100 rounded-[40px] border-4 border-dashed border-slate-200 p-10 flex flex-col items-center justify-center text-center">
+                <div className="bg-white p-6 rounded-[32px] shadow-xl mb-6"><Activity size={48} className="text-indigo-400 animate-pulse"/></div>
+                <p className="text-slate-400 font-black uppercase tracking-widest text-[10px] italic">Extracting Behavioral Patterns...</p>
+                <p className="mt-4 text-slate-500 font-medium">단골 고객들이 이탈하기 전 <br/>마지막 주문 상황의 <br/>'특이점'을 탐색하고 있습니다.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Stage 5: Correlation Insight */}
+        {stage === 5 && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h2 className="text-4xl font-black tracking-tighter italic">5. 분석 결과 해석 및 인과 관계</h2>
+            <div className="bg-white p-12 rounded-[48px] shadow-sm border border-slate-200">
+              <div className="h-80 w-full mb-12">
+                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-8 text-center">Wait Time vs Customer Churn Rate Correlation</h4>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[
+                    { time: '08:00 - 11:00', wait: 6, churn: 5 },
+                    { time: '11:00 - 14:00', wait: 24, churn: 82 },
+                    { time: '14:00 - 17:00', wait: 12, churn: 15 },
+                    { time: '17:00 - 20:00', wait: 5, churn: 2 },
+                  ]} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 700}} />
+                    <YAxis axisLine={false} tickLine={false} />
+                    <Tooltip cursor={{fill: '#f8fafc'}} />
+                    <Bar dataKey="churn" name="이탈률(%)" radius={[10, 10, 0, 0]}>
+                      { [0,1,2,3].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={index === 1 ? '#ef4444' : '#e2e8f0'} />
+                      ))}
+                    </Bar>
+                    <Line type="monotone" dataKey="wait" stroke="#f59e0b" strokeWidth={5} name="평균 대기시간" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="bg-slate-900 rounded-[32px] p-10 text-white">
+                <h3 className="text-amber-500 font-black mb-6 uppercase tracking-widest text-xs italic">Critical Insight Question</h3>
+                <p className="text-2xl font-bold mb-10 leading-relaxed">
+                  위 상관관계 데이터가 보여주는 <span className="text-indigo-400 underline decoration-4 underline-offset-8">핵심적 진실(Truth)</span>은 무엇입니까?
+                </p>
+                <div className="space-y-3">
+                  {[
+                    { id: 'wrong1', text: '오전 시간대의 낮은 유입이 전체 고정비 부담을 높이고 있다.' },
+                    { id: 'correct', text: '점심 피크타임(11시-14시)의 긴 대기시간(24분)이 단골 이탈의 핵심 동인이다.' },
+                    { id: 'wrong2', text: '저녁 시간대의 짧은 대기시간이 오히려 회전율을 떨어뜨리고 있다.' }
+                  ].map(ans => (
+                    <button 
+                      key={ans.id}
+                      onClick={() => setJudgment({...judgment, stage5: ans.id})}
+                      className={`w-full text-left p-6 rounded-[24px] border-2 font-bold transition-all ${judgment.stage5 === ans.id ? 'border-amber-500 bg-amber-500/10' : 'border-slate-700 hover:border-slate-500'}`}
+                    >
+                      {ans.text}
+                    </button>
+                  ))}
+                </div>
+                {errorFeedback && <p className="mt-8 text-red-400 text-center font-bold animate-pulse italic">{errorFeedback}</p>}
+                <button 
+                  onClick={() => {
+                    if (judgment.stage5 === 'correct') nextStage();
+                    else setErrorFeedback("데이터를 다시 읽으십시오. 대기시간(노란색 지표)과 이탈률(빨간색 막대)이 동시에 치솟는 지점이 어디입니까?");
+                  }} 
+                  className="w-full mt-10 bg-white text-slate-900 py-5 rounded-[20px] font-black text-lg transition-all active:scale-95 shadow-xl"
+                  disabled={!judgment.stage5}
+                >
+                  최종 통찰 확정
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Stage 6: Final Decision */}
+        {stage === 6 && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h2 className="text-4xl font-black tracking-tighter italic uppercase text-center mb-10">6. 최종 의사결정 (Final Decision)</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                { id: 'opt1', title: '운영 자동화 (스마트 키오스크 도입)', desc: '점심 피크타임 주문 병목을 즉시 제거하여 대기 시간을 40% 단축하고 고객 경험을 개선합니다.', impact: '데이터 기반 최적해' },
+                { id: 'opt2', title: '원가 절감 (저렴한 원재료 교체)', desc: '단기 마진을 높이지만 현재 고객들이 가장 고통받는 대기시간 문제와는 무관합니다.', impact: '데이터 미반영' },
+                { id: 'opt3', title: '인건비 삭감 (피크타임 인원 감축)', desc: '비용은 줄어들지만 대기시간이 더 늘어나 고객 이탈을 가속화시키는 최악의 선택입니다.', impact: '역효과 발생' }
+              ].map(opt => (
+                <button key={opt.id} onClick={() => setFinalDecision(opt.id)} className={`p-8 text-left border-4 rounded-[40px] transition-all relative overflow-hidden group ${finalDecision === opt.id ? 'border-amber-500 bg-white shadow-2xl scale-[1.02]' : 'border-slate-100 bg-white hover:border-slate-300'}`}>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-xl font-black italic text-slate-800">{opt.title}</span>
+                    <span className={`text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest ${finalDecision === opt.id ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-400'}`}>{opt.impact}</span>
+                  </div>
+                  <p className="text-sm text-slate-500 font-medium leading-relaxed">{opt.desc}</p>
+                  {finalDecision === opt.id && <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-12 bg-amber-500 rounded-full" />}
+                </button>
+              ))}
+            </div>
+            <button 
+              onClick={nextStage} 
+              className="w-full mt-10 bg-slate-900 text-white py-6 rounded-[32px] font-black text-2xl shadow-2xl hover:bg-slate-800 disabled:opacity-20 active:scale-95 transition-all uppercase italic tracking-widest"
+              disabled={!finalDecision}
+            >
+              시뮬레이션 결과 리포트 발행
+            </button>
+          </div>
+        )}
+
+      </main>
+
+      {/* Floating Buttons */}
+      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex gap-4 z-50">
+        {stage > 0 && stage < 7 && (
+          <>
+            <button onClick={prevStage} className="px-6 py-3 bg-white/80 backdrop-blur-md text-slate-500 border border-slate-200 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all shadow-xl flex items-center gap-2">
+              <ArrowLeft size={16}/> Back
+            </button>
+            <button onClick={() => setShowDataSheet(true)} className="px-6 py-3 bg-white/80 backdrop-blur-md text-indigo-600 border border-indigo-200 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-xl flex items-center gap-2">
+              <Table size={16}/> View Data
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Result Page */}
+      {stage === 7 && (
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 animate-in zoom-in duration-500">
+          <div className="max-w-2xl w-full bg-white rounded-[60px] overflow-hidden shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)] border border-white/10">
+            <div className="bg-emerald-500 p-20 text-center text-white relative">
+              <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+                <div className="absolute top-10 left-10 w-40 h-40 border-8 border-white rounded-full"></div>
+                <div className="absolute bottom-10 right-10 w-60 h-60 border-8 border-white rounded-full"></div>
+              </div>
+              <div className="w-24 h-24 bg-white/20 rounded-[35px] flex items-center justify-center mx-auto mb-10 rotate-12 backdrop-blur-md border border-white/30 shadow-2xl">
+                <CheckCircle2 size={60} />
+              </div>
+              <h2 className="text-6xl font-black mb-4 tracking-tighter uppercase italic">Mission Success</h2>
+              <p className="text-emerald-100 font-black text-lg tracking-widest uppercase underline decoration-2 underline-offset-8 decoration-white/50">Data Insight Professional</p>
+            </div>
+            
+            <div className="p-16">
+              <div className="grid grid-cols-3 gap-6 mb-16">
+                <div className="p-8 bg-slate-50 rounded-[40px] text-center border border-slate-100 group hover:bg-indigo-50 transition-colors">
+                  <p className="text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Revenue Impact</p>
+                  <p className="text-3xl font-black text-indigo-600 tracking-tighter">SUCCESS</p>
+                </div>
+                <div className="p-8 bg-slate-50 rounded-[40px] text-center border border-slate-100 group hover:bg-emerald-50 transition-colors">
+                  <p className="text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Churn Rate</p>
+                  <p className="text-3xl font-black text-emerald-600 tracking-tighter">-48.2%</p>
+                </div>
+                <div className="p-8 bg-slate-50 rounded-[40px] text-center border border-slate-100 group hover:bg-amber-50 transition-colors">
+                  <p className="text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Score</p>
+                  <p className="text-3xl font-black text-amber-600 tracking-tighter">PERFECT</p>
+                </div>
+              </div>
+
+              <div className="bg-slate-900 p-10 rounded-[45px] text-white shadow-2xl border-t-8 border-emerald-500 mb-12">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 bg-emerald-500 rounded-2xl"><Activity size={24} /></div>
+                  <h4 className="font-black text-lg tracking-widest uppercase italic">Evaluation Verdict</h4>
+                </div>
+                <p className="text-lg text-slate-300 leading-relaxed italic font-medium">
+                  "당신은 AI가 주는 칭찬에 안주하지 않고, <strong>직접 데이터를 파헤쳐 '진짜 범인'</strong>을 찾아냈습니다. 
+                  막연한 마케팅 대신 데이터가 가리키는 병목(Bottleneck)인 '대기 시간'을 해결한 당신의 결단은 가장 과학적인 의사결정이었습니다."
+                </p>
+              </div>
+
+              <button onClick={reset} className="w-full py-6 bg-slate-100 rounded-[30px] font-black text-slate-500 hover:bg-slate-200 transition-all active:scale-95 uppercase tracking-widest text-xs">새로운 분석 시나리오 도전</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
