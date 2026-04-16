@@ -3,441 +3,486 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Detective: Cafe Simulation</title>
-    <!-- Tailwind CSS CDN -->
+    <title>데이터 디텍티브: 카페 턴어라운드 (심화 실습)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React, ReactDOM, Prop-Types (Recharts dependencies) -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
-    <!-- Recharts -->
     <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
-    <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap');
+        body { font-family: 'Pretendard', -apple-system, sans-serif; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* Animation for smooth transitions */
-        .fade-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
     </style>
 </head>
-<body class="bg-slate-50">
+<body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect } = React;
         const { 
             LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
-            BarChart, Bar, Cell, PieChart, Pie 
+            BarChart, Bar, Cell, PieChart, Pie, ComposedChart, Area
         } = window.Recharts;
 
-        // SVG Icons components (Lucide fallback for React CDN)
         const Icon = ({ name, size = 20, className = "" }) => {
-            return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
+            return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block align-middle ${className}`}></i>;
         };
 
         const App = () => {
             const [stage, setStage] = useState(0);
+            const [showDataSheet, setShowDataSheet] = useState(false);
+            const [errorFeedback, setErrorFeedback] = useState("");
+            
+            // 사용자의 선택 상태 관리
+            const [inputLoss, setInputLoss] = useState("");
             const [selectedPath, setSelectedPath] = useState(null);
             const [selectedSegment, setSelectedSegment] = useState(null);
+            const [queryConfig, setQueryConfig] = useState({ dimension: null, metric: null, filter: null });
+            const [queryResult, setQueryResult] = useState(null); // 'success' or 'fail'
+            const [judgmentStage5, setJudgmentStage5] = useState(null);
             const [finalDecision, setFinalDecision] = useState(null);
-            const [judgment, setJudgment] = useState({ stage1: null, stage5: null });
-            const [errorFeedback, setErrorFeedback] = useState("");
-            const [showDataSheet, setShowDataSheet] = useState(false);
 
-            // Re-run lucide icon replacement on state changes that affect the DOM
             useEffect(() => {
-                if (window.lucide) {
-                    window.lucide.createIcons();
-                }
-            }, [stage, showDataSheet, errorFeedback, selectedPath, selectedSegment]);
+                if (window.lucide) window.lucide.createIcons();
+            }, [stage, showDataSheet, errorFeedback, selectedPath, selectedSegment, queryConfig]);
 
+            // --- 정밀한 데이터셋 (단위 명확화) ---
             const rawData = useMemo(() => [
-                { month: '1월', rev: 5000, cost: 3500, profit: 1500, newCust: 1200, oldCust: 3800, waitTime: 8 },
-                { month: '2월', rev: 4800, cost: 3600, profit: 1200, newCust: 1150, oldCust: 3650, waitTime: 9 },
-                { month: '3월', rev: 4200, cost: 3700, profit: 500,  newCust: 1250, oldCust: 2950, waitTime: 12 },
-                { month: '4월', rev: 3800, cost: 3800, profit: 0,    newCust: 1200, oldCust: 2600, waitTime: 15 },
-                { month: '5월', rev: 3400, cost: 3900, profit: -500, newCust: 1300, oldCust: 2100, waitTime: 18 },
-                { month: '6월', rev: 3100, cost: 4000, profit: -900, newCust: 1280, oldCust: 1820, waitTime: 22 },
+                { month: '1월', rev: 5200, cost: 3600, profit: 1600, newRev: 1400, oldRev: 3800, waitTime: 8, waste: 12, overtime: 10 },
+                { month: '2월', rev: 4900, cost: 3650, profit: 1250, newRev: 1450, oldRev: 3450, waitTime: 9, waste: 14, overtime: 12 },
+                { month: '3월', rev: 4300, cost: 3750, profit: 550,  newRev: 1500, oldRev: 2800, waitTime: 13, waste: 25, overtime: 25 }, // 프랜차이즈 오픈 & 점장 교체
+                { month: '4월', rev: 3800, cost: 3800, profit: 0,    newRev: 1450, oldRev: 2350, waitTime: 17, waste: 28, overtime: 30 }, 
+                { month: '5월', rev: 3300, cost: 3950, profit: -650, newRev: 1550, oldRev: 1750, waitTime: 21, waste: 32, overtime: 35 }, // 적자 시작
+                { month: '6월', rev: 3000, cost: 4100, profit: -1100,newRev: 1480, oldRev: 1520, waitTime: 25, waste: 38, overtime: 40 }, 
             ], []);
 
             const revenueBreakdown = [
-                { name: '신규 고객 매출', value: 1280, fill: '#94a3b8' },
-                { name: '재방문 고객 매출', value: 1820, fill: '#f43f5e' },
+                { name: '신규 고객 매출', value: 1480, fill: '#94a3b8' },
+                { name: '재방문 고객 매출', value: 1520, fill: '#f43f5e' },
             ];
 
             const steps = [
-                "진단: 현상 파악", 
-                "분해: 원인 식별", 
-                "심화: 세부 지표", 
-                "추출: 가설 설계", 
-                "통찰: 인과 관계", 
-                "실행: 의사 결정"
+                "재무 진단 (주관식)", 
+                "손익 드라이버 (함정 판독)", 
+                "세그먼트 분석", 
+                "가설 쿼리 설계 (조합형)", 
+                "인과 판독", 
+                "최종 결정"
             ];
 
             const nextStage = () => { setErrorFeedback(""); setStage(prev => prev + 1); };
             const prevStage = () => { setErrorFeedback(""); setStage(prev => Math.max(0, prev - 1)); };
-            const reset = () => {
-                setStage(0); setSelectedPath(null); setSelectedSegment(null);
-                setFinalDecision(null); setJudgment({ stage1: null, stage5: null });
-                setErrorFeedback(""); setShowDataSheet(false);
+
+            const executeQuery = () => {
+                const { dimension, metric, filter } = queryConfig;
+                if (!dimension || !metric || !filter) {
+                    setErrorFeedback("세 가지 항목(분석 기준, 측정 값, 필터 대상)을 모두 선택해야 엔진이 가동됩니다.");
+                    return;
+                }
+                
+                // 정답 조합: 시간대별 + 대기시간 및 이탈률 + 단골(재방문)고객
+                if (dimension === '시간대별' && metric === '대기시간 및 이탈률' && filter === '단골(재방문) 고객') {
+                    setQueryResult('success');
+                    nextStage();
+                } else {
+                    setQueryResult('fail');
+                    nextStage(); // 실패해도 넘어감 (실패 화면을 보여주기 위해)
+                }
             };
 
-            const StepProgress = () => (
-                <div className="w-full bg-slate-900 text-white p-4 border-b border-slate-700">
-                    <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-amber-500 rounded-lg shadow-lg"><Icon name="coffee" /></div>
-                            <div>
-                                <h1 className="text-lg font-bold leading-none italic">DATA DETECTIVE</h1>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Cafe Crisis Solution</p>
-                            </div>
-                        </div>
-                        <div className="flex gap-2">
-                            {steps.map((s, i) => (
-                                <div key={i} className={`h-1.5 w-8 rounded-full transition-all ${stage > i ? 'bg-emerald-500' : stage === i + 1 ? 'bg-amber-500 w-12' : 'bg-slate-700'}`} />
-                            ))}
-                        </div>
-                        {stage > 0 && stage < 7 && (
-                            <div className="text-[11px] font-bold text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 uppercase tracking-tight">
-                                Step {stage}: {steps[stage-1]}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-
             const DataSheetModal = () => showDataSheet && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-sm">
-                    <div className="relative w-full max-w-4xl bg-white rounded-[32px] shadow-2xl overflow-hidden fade-in">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/90 backdrop-blur-md">
+                    <div className="relative w-full max-w-6xl bg-white rounded-[40px] shadow-2xl overflow-hidden fade-in border border-slate-200">
                         <div className="p-6 border-b flex justify-between items-center bg-slate-50">
-                            <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
-                                <Icon name="table" className="text-indigo-600"/> 
-                                전체 비즈니스 데이터 시트
-                            </h3>
-                            <button onClick={() => setShowDataSheet(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><Icon name="x" /></button>
+                            <div>
+                                <h3 className="font-black text-slate-900 text-lg flex items-center gap-2">
+                                    <Icon name="table" className="text-indigo-600"/> 
+                                    경영 분석 원시 데이터 (Raw Data)
+                                </h3>
+                            </div>
+                            <button onClick={() => setShowDataSheet(false)} className="p-3 bg-slate-200 hover:bg-slate-300 rounded-full transition-all text-slate-700">
+                                <Icon name="x" size={20} />
+                            </button>
                         </div>
-                        <div className="p-8 overflow-auto max-h-[60vh] scrollbar-hide">
-                            <table className="w-full text-left text-sm border-collapse">
+                        <div className="p-8 overflow-auto max-h-[70vh] scrollbar-hide">
+                            <table className="w-full text-left text-sm border-collapse min-w-[800px]">
                                 <thead>
-                                    <tr className="border-b-2 border-slate-200">
-                                        {["월별", "매출(만)", "비용(만)", "이익(만)", "신규매출", "재방문매출", "대기시간(분)"].map(h => (
-                                            <th key={h} className="p-3 font-bold text-slate-400 uppercase tracking-widest text-[10px]">{h}</th>
-                                        ))}
+                                    <tr className="border-b-4 border-slate-300 text-xs font-black text-slate-500 uppercase bg-slate-100">
+                                        <th className="p-4 rounded-tl-xl">월별</th>
+                                        <th className="p-4">매출액<br/><span className="text-[10px] font-medium text-slate-400">(단위: 만원)</span></th>
+                                        <th className="p-4">총비용<br/><span className="text-[10px] font-medium text-slate-400">(단위: 만원)</span></th>
+                                        <th className="p-4 text-indigo-700">영업이익<br/><span className="text-[10px] font-medium text-indigo-400">(단위: 만원)</span></th>
+                                        <th className="p-4 bg-slate-200/50">신규고객 매출<br/><span className="text-[10px] font-medium text-slate-400">(단위: 만원)</span></th>
+                                        <th className="p-4 bg-slate-200/50">재방문 단골매출<br/><span className="text-[10px] font-medium text-slate-400">(단위: 만원)</span></th>
+                                        <th className="p-4 text-amber-700">평균 대기시간<br/><span className="text-[10px] font-medium text-amber-500">(단위: 분)</span></th>
+                                        <th className="p-4 text-red-600">원재료 폐기량<br/><span className="text-[10px] font-medium text-red-400">(단위: kg)</span></th>
+                                        <th className="p-4 text-orange-600 rounded-tr-xl">초과근무 합계<br/><span className="text-[10px] font-medium text-orange-400">(단위: 시간)</span></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {rawData.map((d, i) => (
-                                        <tr key={i} className={`border-b border-slate-100 hover:bg-slate-50 ${d.profit < 0 ? 'bg-red-50/50' : ''}`}>
-                                            <td className="p-3 font-bold">{d.month}</td>
-                                            <td className="p-3 font-mono">{d.rev}</td>
-                                            <td className="p-3 font-mono">{d.cost}</td>
-                                            <td className={`p-3 font-black font-mono ${d.profit < 0 ? 'text-red-600' : 'text-indigo-600'}`}>{d.profit}</td>
-                                            <td className="p-3 font-mono">{d.newCust}</td>
-                                            <td className="p-3 font-mono">{d.oldCust}</td>
-                                            <td className="p-3 font-mono font-bold text-amber-600">{d.waitTime}m</td>
+                                        <tr key={i} className={`border-b border-slate-200 hover:bg-slate-50 font-mono ${d.profit < 0 ? 'bg-red-50/40' : ''}`}>
+                                            <td className="p-4 font-black text-slate-900 font-sans">{d.month}</td>
+                                            <td className="p-4">{d.rev.toLocaleString()}</td>
+                                            <td className="p-4">{d.cost.toLocaleString()}</td>
+                                            <td className={`p-4 font-black text-lg ${d.profit < 0 ? 'text-red-600' : 'text-indigo-600'}`}>{d.profit.toLocaleString()}</td>
+                                            <td className="p-4 bg-slate-50/50">{d.newRev.toLocaleString()}</td>
+                                            <td className="p-4 bg-slate-50/50 font-bold">{d.oldRev.toLocaleString()}</td>
+                                            <td className="p-4 font-black text-amber-600">{d.waitTime}</td>
+                                            <td className="p-4 font-bold text-red-500">{d.waste}</td>
+                                            <td className="p-4 font-bold text-orange-500">{d.overtime}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
+                            <div className="mt-8 p-5 bg-slate-100 rounded-2xl border border-slate-300 flex gap-4 text-slate-700 font-medium text-sm leading-relaxed">
+                                <Icon name="info" className="text-slate-500 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="mb-2"><strong className="text-slate-900">배경 정보:</strong> 3월 초, 바로 옆 건물에 대형 프랜차이즈 '스타커피'가 오픈했습니다. 같은 시기 기존 숙련된 점장이 퇴사하고, 파트타임 아르바이트생 위주로 매장 인력이 개편되었습니다.</p>
+                                    <p>데이터 시트의 단위(만원, kg, 시간, 분)를 혼동하지 말고 각 지표가 영업이익에 미치는 레버리지를 계산하십시오.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             );
 
+            // --- 렌더링 ---
+
             if (stage === 0) return (
-                <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-                    <div className="max-w-xl w-full bg-white rounded-[48px] shadow-2xl p-16 text-center border border-slate-100 fade-in">
-                        <div className="w-24 h-24 bg-amber-100 rounded-[32px] flex items-center justify-center mx-auto mb-10 shadow-lg rotate-6">
-                            <Icon name="search" size={48} className="text-amber-600" />
+                <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 relative">
+                    <div className="max-w-2xl w-full bg-white rounded-[40px] shadow-2xl p-16 text-center relative z-10 fade-in">
+                        <div className="inline-block p-6 bg-indigo-600 rounded-[28px] mb-8 shadow-xl shadow-indigo-500/30 transform -rotate-3">
+                            <Icon name="bar-chart-2" size={56} className="text-white" />
                         </div>
-                        <h2 className="text-5xl font-black text-slate-900 mb-6 tracking-tighter italic">"The Insight"</h2>
-                        <p className="text-slate-600 mb-12 leading-relaxed text-lg font-medium">
-                            데이터 시뮬레이션에 오신 것을 환영합니다.<br/>
-                            당신은 이제부터 데이터로 증거를 찾는 탐정입니다.<br/>
-                            <span className="text-indigo-600 font-bold underline underline-offset-4">정확한 판단</span>만이 폐업 위기의 카페를 살릴 수 있습니다.
+                        <h1 className="text-5xl font-black text-slate-900 mb-6 tracking-tighter uppercase italic">Data Turnaround<br/><span className="text-indigo-600 text-3xl">Advanced Case Study</span></h1>
+                        <p className="text-slate-600 mb-10 leading-relaxed font-bold text-lg bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                            이 과정은 3분 만에 끝나는 가벼운 테스트가 아닙니다.<br/>
+                            당신은 원시 데이터(Raw Data)를 파헤치고, 함정을 피하며,<br/>
+                            정확한 논리적 쿼리를 짜야만 카페를 살릴 수 있습니다.
                         </p>
-                        <button onClick={nextStage} className="w-full bg-slate-900 text-white py-6 rounded-[24px] font-black text-2xl hover:bg-slate-800 transition-all active:scale-95 shadow-2xl uppercase tracking-widest italic">Game Start</button>
+                        <button onClick={nextStage} className="w-full bg-slate-900 text-white py-6 rounded-2xl font-black text-xl hover:bg-indigo-600 transition-all active:scale-95 shadow-2xl uppercase tracking-widest">분석 데스크 접속</button>
                     </div>
                 </div>
             );
 
             return (
                 <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
-                    <StepProgress />
+                    <header className="w-full bg-slate-900 text-white p-5 sticky top-0 z-50 shadow-md">
+                        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-indigo-600 rounded-xl"><Icon name="cpu" size={24} /></div>
+                                <div>
+                                    <h1 className="font-black tracking-tighter uppercase italic text-lg">BI Dashboard</h1>
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap gap-1 justify-center">
+                                {steps.map((label, i) => (
+                                    <div key={i} className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${stage === i + 1 ? 'bg-indigo-500 text-white shadow-lg scale-105' : stage > i + 1 ? 'bg-emerald-500/20 text-emerald-300' : 'text-slate-600'}`}>
+                                        {i+1}. {label}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </header>
+
                     <DataSheetModal />
-                    <main className="flex-1 p-6 md:p-10 max-w-6xl mx-auto w-full flex flex-col gap-8 pb-32 overflow-auto scrollbar-hide">
+
+                    <main className="flex-1 p-6 md:p-10 max-w-6xl mx-auto w-full flex flex-col gap-10 pb-40">
                         
+                        {/* Stage 1: 주관식 퀴즈 */}
                         {stage === 1 && (
                             <div className="space-y-8 fade-in">
-                                <div className="flex flex-col md:flex-row justify-between items-end gap-4">
-                                    <div className="space-y-1">
-                                        <h2 className="text-4xl font-black tracking-tighter italic">1. 비즈니스 헬스 체크</h2>
-                                        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Monthly Revenue vs Total Cost Trend</p>
-                                    </div>
-                                    <button onClick={() => setShowDataSheet(true)} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 shadow-lg uppercase italic"><Icon name="table" size={14}/> Open Data Sheet</button>
+                                <div className="flex justify-between items-end">
+                                    <h2 className="text-3xl font-black tracking-tighter italic">1. 재무 진단 (주관식 검증)</h2>
+                                    <button onClick={() => setShowDataSheet(true)} className="flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white rounded-xl text-xs font-black shadow-lg hover:bg-indigo-700 transition-all animate-bounce"><Icon name="table" size={16}/> 원본 데이터 열기 (필수)</button>
                                 </div>
-                                <div className="bg-white p-8 rounded-[40px] shadow-sm border border-slate-200 h-80">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={rawData}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 700}} />
-                                            <YAxis axisLine={false} tickLine={false} />
-                                            <Tooltip contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
-                                            <Legend verticalAlign="top" align="right" height={40} />
-                                            <Line type="monotone" dataKey="rev" name="매출액" stroke="#6366f1" strokeWidth={5} dot={{r: 6}} />
-                                            <Line type="monotone" dataKey="cost" name="총 비용" stroke="#94a3b8" strokeWidth={3} strokeDasharray="10 10" />
-                                            <Line type="monotone" dataKey="profit" name="영업이익" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" />
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                </div>
-                                <div className="bg-slate-900 rounded-[32px] p-10 text-white shadow-2xl relative overflow-hidden">
-                                    <h3 className="text-amber-500 font-black mb-6 uppercase tracking-widest text-xs italic">Data Analysis Quiz</h3>
-                                    <p className="text-2xl font-bold mb-10 leading-relaxed">차트를 분석하십시오. 매출이 비용보다 낮아지며 <span className="text-red-400 underline decoration-4 underline-offset-8 text-nowrap">실질적인 적자(Loss)</span>가 시작된 달은 언제입니까?</p>
-                                    <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-                                        {rawData.map(d => (
-                                            <button key={d.month} onClick={() => setJudgment({...judgment, stage1: d.month})} className={`py-4 rounded-2xl border-2 font-bold transition-all ${judgment.stage1 === d.month ? 'border-amber-500 bg-amber-500/10' : 'border-slate-700 hover:border-slate-500'}`}>{d.month}</button>
-                                        ))}
+
+                                <div className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200">
+                                    <h4 className="text-xs font-black text-slate-400 mb-6 uppercase tracking-widest text-center">Revenue & Cost (단위: 만원)</h4>
+                                    <div className="h-72 w-full">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <ComposedChart data={rawData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 900}} />
+                                                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12}} />
+                                                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                                                <Area type="monotone" dataKey="rev" fill="#818cf8" fillOpacity={0.1} stroke="none" />
+                                                <Line type="monotone" dataKey="rev" name="매출(만원)" stroke="#6366f1" strokeWidth={4} />
+                                                <Line type="monotone" dataKey="cost" name="비용(만원)" stroke="#94a3b8" strokeWidth={3} strokeDasharray="6 6" />
+                                            </ComposedChart>
+                                        </ResponsiveContainer>
                                     </div>
-                                    {errorFeedback && <div className="mt-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex gap-3 text-red-400 text-sm font-bold animate-pulse"><Icon name="alert-circle" /> {errorFeedback}</div>}
-                                    <button onClick={() => {
-                                        if (judgment.stage1 === '5월') nextStage();
-                                        else if (judgment.stage1 === '4월') setErrorFeedback("4월은 매출과 비용이 3,800만원으로 동일한 '손익분기점'입니다. 적자가 시작된 달은 그 다음 달인 5월입니다.");
-                                        else setErrorFeedback("데이터를 다시 확인하세요. 이익(Profit) 지표가 0보다 작아지는 시점을 찾아보십시오.");
-                                    }} className="w-full mt-10 bg-white text-slate-900 py-5 rounded-2xl font-black text-lg shadow-xl hover:bg-slate-100 transition-colors" disabled={!judgment.stage1}>판단 확정 및 다음 단계</button>
+                                </div>
+
+                                <div className="bg-slate-900 rounded-[32px] p-10 text-white shadow-2xl">
+                                    <h3 className="text-amber-400 font-black mb-6 uppercase tracking-widest text-xs"><Icon name="terminal" size={16}/> System Required Input</h3>
+                                    <p className="text-xl font-bold mb-6 leading-relaxed">
+                                        데이터 시트를 열어 숫자를 직접 확인하십시오. <br/>
+                                        매출이 비용을 감당하지 못하고 <span className="text-red-400 underline decoration-4 underline-offset-4">최초로 적자(Minus Profit)가 발생한 달의 정확한 영업이익 금액</span>을 입력하세요.
+                                    </p>
+                                    <div className="flex flex-col md:flex-row gap-4 items-center">
+                                        <input 
+                                            type="number" 
+                                            placeholder="예: -100" 
+                                            value={inputLoss}
+                                            onChange={(e) => setInputLoss(e.target.value)}
+                                            className="w-full md:w-1/2 p-5 rounded-2xl bg-slate-800 border-2 border-slate-700 text-white font-mono text-2xl focus:border-indigo-500 focus:outline-none"
+                                        />
+                                        <span className="text-xl font-black text-slate-400">만원</span>
+                                    </div>
+                                    {errorFeedback && <p className="mt-6 text-red-400 font-bold text-sm bg-red-500/10 p-4 rounded-xl">{errorFeedback}</p>}
+                                    <button 
+                                        onClick={() => {
+                                            if (inputLoss === "-650") nextStage();
+                                            else if (inputLoss === "0") setErrorFeedback("0원은 적자가 아닌 '손익분기점(4월)'입니다. 손실이 발생한 금액을 찾으세요.");
+                                            else if (inputLoss === "-1100") setErrorFeedback("그것은 6월의 적자입니다. '최초로' 적자가 시작된 달(5월)의 금액을 찾으세요.");
+                                            else setErrorFeedback("데이터 시트의 '영업이익' 열을 확인하세요. 정확한 음수(-) 금액을 기입해야 합니다.");
+                                        }} 
+                                        className="w-full mt-8 bg-indigo-600 text-white py-5 rounded-2xl font-black text-xl hover:bg-indigo-500 transition-all"
+                                    >
+                                        입력값 검증 (Verify)
+                                    </button>
                                 </div>
                             </div>
                         )}
 
+                        {/* Stage 2: 함정 판독 */}
                         {stage === 2 && (
                             <div className="space-y-8 fade-in">
-                                <h2 className="text-4xl font-black tracking-tighter italic">2. 원인 드라이버 식별</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className={`p-10 rounded-[40px] border-4 transition-all cursor-pointer ${selectedPath === 'rev' ? 'border-indigo-500 bg-white shadow-2xl scale-[1.02]' : 'border-slate-100 bg-white opacity-60'}`} onClick={() => setSelectedPath('rev')}>
-                                        <div className="flex justify-between items-start mb-6">
-                                            <div className="p-4 bg-indigo-100 text-indigo-600 rounded-2xl"><Icon name="dollar-sign" size={32}/></div>
-                                            <div className="text-right">
-                                                <p className="text-3xl font-black text-red-600">-38.0% <span className="text-xs text-slate-400 font-bold uppercase">Fall</span></p>
-                                            </div>
-                                        </div>
-                                        <h3 className="text-2xl font-black mb-4 italic">수익성 하락 (Revenue Fall)</h3>
-                                        <p className="text-slate-500 font-medium leading-relaxed">1월 5,000만원 → 6월 3,100만원으로 급감. 비즈니스의 기초 체력이 무너지고 있음을 뜻합니다.</p>
-                                    </div>
-                                    <div className={`p-10 rounded-[40px] border-4 transition-all cursor-pointer ${selectedPath === 'cost' ? 'border-amber-500 bg-white shadow-2xl scale-[1.02]' : 'border-slate-100 bg-white opacity-60'}`} onClick={() => setSelectedPath('cost')}>
-                                        <div className="flex justify-between items-start mb-6">
-                                            <div className="p-4 bg-amber-100 text-amber-600 rounded-2xl"><Icon name="trending-down" size={32} className="rotate-180"/></div>
-                                            <div className="text-right">
-                                                <p className="text-3xl font-black text-amber-600">+14.2% <span className="text-xs text-slate-400 font-bold uppercase">Rise</span></p>
-                                            </div>
-                                        </div>
-                                        <h3 className="text-2xl font-black mb-4 italic">비용 상승 (Cost Rise)</h3>
-                                        <p className="text-slate-500 font-medium leading-relaxed">1월 3,500만원 → 6월 4,000만원으로 상승. 하지만 매출 하락폭에 비하면 낮은 영향력입니다.</p>
-                                    </div>
+                                <h2 className="text-4xl font-black tracking-tighter italic">2. 원인 드라이버 식별 (함정 주의)</h2>
+                                <div className="p-6 bg-amber-50 border-l-8 border-amber-500 rounded-2xl flex gap-4 text-amber-900 font-medium">
+                                    <Icon name="alert-triangle" className="shrink-0 text-amber-600" />
+                                    <p><strong>상황 보고:</strong> 3월에 경쟁사 '스타커피'가 오픈했고, 같은 달에 점장 교체 후 원재료 폐기량(kg)과 초과근무(시간)가 급증했습니다. 적자의 진짜 원흉은 무엇입니까?</p>
                                 </div>
-                                <div className="bg-slate-900 rounded-[32px] p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
-                                    <p className="text-lg font-bold italic text-center md:text-left">적자의 가장 <span className="text-red-400 underline decoration-2 underline-offset-4">결정적인 원인</span>은 무엇입니까?</p>
-                                    <div className="flex gap-4 w-full md:w-auto">
-                                        <button onClick={prevStage} className="px-8 py-4 text-slate-400 hover:text-white font-bold flex items-center gap-2 transition-colors"><Icon name="arrow-left" size={18}/> Back</button>
-                                        <button onClick={() => selectedPath === 'rev' ? nextStage() : setErrorFeedback("비용이 상승한 것은 사실이나, 매출 하락의 규모가 훨씬 큽니다. 더 큰 '레버리지'를 찾으세요.")} className="px-12 py-4 bg-white text-slate-900 rounded-xl font-black shadow-lg hover:bg-slate-100 transition-colors" disabled={!selectedPath}>Next Step</button>
-                                    </div>
-                                </div>
-                                {errorFeedback && <div className="p-4 bg-red-50 text-red-600 font-bold text-sm text-center rounded-2xl shadow-inner">{errorFeedback}</div>}
-                            </div>
-                        )}
 
-                        {stage === 3 && (
-                            <div className="space-y-8 fade-in">
-                                <h2 className="text-4xl font-black tracking-tighter italic">3. 매출 세그먼트 드릴다운</h2>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center bg-white p-12 rounded-[48px] border border-slate-200">
-                                    <div className="h-72 w-full flex flex-col items-center">
-                                        <h4 className="text-xs font-black text-slate-400 mb-8 uppercase tracking-widest italic">6월 매출 구성 (Revenue Structure)</h4>
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <PieChart>
-                                                <Pie data={revenueBreakdown} innerRadius={80} outerRadius={110} paddingAngle={10} dataKey="value">
-                                                    {revenueBreakdown.map((entry, index) => <Cell key={index} fill={entry.fill} />)}
-                                                </Pie>
-                                                <Tooltip />
-                                                <Legend verticalAlign="bottom" height={36}/>
-                                            </PieChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                    <div className="space-y-6">
-                                        <div className={`p-8 rounded-[32px] border-4 transition-all cursor-pointer ${selectedSegment === 'new' ? 'border-indigo-500 bg-indigo-50' : 'bg-slate-50 opacity-60'}`} onClick={() => setSelectedSegment('new')}>
-                                            <p className="font-bold text-slate-800 mb-1">신규 고객 매출 <span className="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full uppercase ml-2">Stable</span></p>
-                                            <p className="text-3xl font-black text-slate-900 mb-2">1,280만원</p>
-                                            <p className="text-xs text-slate-500">1월(1,200만) 대비 안정적입니다. 유입은 문제가 없습니다.</p>
-                                        </div>
-                                        <div className={`p-8 rounded-[32px] border-4 transition-all cursor-pointer ${selectedSegment === 'old' ? 'border-indigo-500 bg-indigo-50' : 'bg-slate-50 opacity-60'}`} onClick={() => setSelectedSegment('old')}>
-                                            <p className="font-bold text-slate-800 mb-1">재방문 단골 고객 매출 <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full uppercase ml-2">Critical</span></p>
-                                            <p className="text-3xl font-black text-slate-900 mb-2">1,820만원</p>
-                                            <p className="text-xs text-slate-500">1월(3,800만) 대비 52%나 감소했습니다. 단골들이 떠났습니다.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="bg-slate-900 rounded-[32px] p-8 text-white text-center shadow-xl">
-                                    <p className="text-xl font-bold mb-8 italic">어떤 데이터 포인트에서 '비즈니스의 균열'이 시작되었습니까?</p>
-                                    <button onClick={() => selectedSegment === 'old' ? nextStage() : setErrorFeedback("신규 유입 데이터는 안정적입니다. 진짜 매출이 '사라진 곳'을 판독하세요.")} className="bg-white text-slate-900 px-16 py-5 rounded-2xl font-black shadow-xl hover:bg-slate-100 transition-colors" disabled={!selectedSegment}>원인 파악 완료</button>
-                                    {errorFeedback && <p className="mt-4 text-red-400 font-bold text-sm animate-pulse">{errorFeedback}</p>}
-                                </div>
-                            </div>
-                        )}
-
-                        {stage === 4 && (
-                            <div className="space-y-8 fade-in">
-                                <h2 className="text-4xl font-black tracking-tighter italic uppercase">4. 가설 검증 및 쿼리 추출</h2>
-                                <div className="flex flex-col lg:flex-row gap-8">
-                                    <div className="flex-1 bg-white rounded-[40px] border border-slate-200 p-10 shadow-sm flex flex-col">
-                                        <h4 className="font-bold text-slate-800 mb-10 flex items-center gap-2 uppercase tracking-widest text-xs italic"><Icon name="database" className="text-indigo-500"/> Data Analytics Workbench</h4>
-                                        <div className="space-y-10 flex-1">
-                                            <section>
-                                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Dimension (Group By)</p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {['시간대별', '메뉴별', '요일별'].map(d => <button key={d} className="px-6 py-3 rounded-2xl border-2 border-slate-100 hover:border-indigo-500 font-bold text-xs transition-all focus:bg-indigo-600 focus:text-white focus:border-indigo-600">{d}</button>)}
-                                                </div>
-                                            </section>
-                                            <section>
-                                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Metric (Aggregate)</p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {['평균 대기시간', '취소 건수', '재방문율'].map(m => <button key={m} className="px-6 py-3 rounded-2xl border-2 border-slate-100 hover:border-indigo-500 font-bold text-xs transition-all focus:bg-indigo-600 focus:text-white focus:border-indigo-600">{m}</button>)}
-                                                </div>
-                                            </section>
-                                            <div className="p-8 bg-slate-900 rounded-[32px] font-mono text-sm leading-relaxed border-l-[12px] border-amber-500 relative group overflow-hidden shadow-inner">
-                                                <p className="text-indigo-400 opacity-60 mb-2 italic">// Hypothesis Verification</p>
-                                                <p className="text-white"><span className="text-amber-400 font-bold uppercase">SELECT</span> Time_Hour, <span className="text-indigo-300">AVG</span>(Wait_Time)</p>
-                                                <p className="text-white"><span className="text-amber-400 font-bold uppercase">FROM</span> Customer_Log</p>
-                                                <p className="text-white"><span className="text-amber-400 font-bold uppercase">WHERE</span> Outcome = 'Lost_Customer'</p>
-                                            </div>
-                                        </div>
-                                        <button onClick={nextStage} className="mt-12 bg-indigo-600 text-white py-5 rounded-[24px] font-black text-lg hover:bg-indigo-700 active:scale-95 transition-all shadow-lg">Execute Analysis</button>
-                                    </div>
-                                    <div className="w-full lg:w-1/3 bg-slate-100 rounded-[40px] border-4 border-dashed border-slate-200 p-10 flex flex-col items-center justify-center text-center">
-                                        <Icon name="activity" size={48} className="text-indigo-400 animate-pulse mb-6" />
-                                        <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] italic">Extracting Patterns...</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {stage === 5 && (
-                            <div className="space-y-8 fade-in">
-                                <h2 className="text-4xl font-black tracking-tighter italic">5. 분석 결과 해석 및 인과 관계</h2>
-                                <div className="bg-white p-12 rounded-[48px] shadow-sm border border-slate-200">
-                                    <div className="h-80 w-full mb-12">
-                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-8 text-center">Wait Time vs Customer Churn Rate Correlation</h4>
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={[
-                                                { time: '08:00 - 11:00', wait: 6, churn: 5 },
-                                                { time: '11:00 - 14:00', wait: 24, churn: 82 },
-                                                { time: '14:00 - 17:00', wait: 12, churn: 15 },
-                                                { time: '17:00 - 20:00', wait: 5, churn: 2 },
-                                            ]}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 700}} />
-                                                <YAxis axisLine={false} tickLine={false} />
-                                                <Tooltip cursor={{fill: '#f8fafc'}} />
-                                                <Bar dataKey="churn" name="이탈률(%)" radius={[10, 10, 0, 0]}>
-                                                    { [0,1,2,3].map((e, idx) => <Cell key={idx} fill={idx === 1 ? '#ef4444' : '#e2e8f0'} />)}
-                                                </Bar>
-                                                <Line type="monotone" dataKey="wait" stroke="#f59e0b" strokeWidth={5} name="평균 대기시간" />
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                    <div className="bg-slate-900 rounded-[32px] p-10 text-white shadow-xl">
-                                        <p className="text-2xl font-bold mb-10 leading-relaxed italic text-center md:text-left">위 상관관계 데이터가 보여주는 <span className="text-indigo-400 underline decoration-4 underline-offset-8">핵심적 진실</span>은 무엇입니까?</p>
-                                        <div className="space-y-3">
-                                            {[
-                                                { id: 'wrong1', text: '오전 시간대의 낮은 유입이 전체 고정비 부담을 높이고 있다.' },
-                                                { id: 'correct', text: '점심 피크타임(11시-14시)의 긴 대기시간(24분)이 단골 이탈의 핵심 동인이다.' },
-                                                { id: 'wrong2', text: '저녁 시간대의 짧은 대기 시간이 회전율을 떨어뜨리고 있다.' }
-                                            ].map(ans => (
-                                                <button key={ans.id} onClick={() => setJudgment({...judgment, stage5: ans.id})} className={`w-full text-left p-6 rounded-[24px] border-2 font-bold transition-all ${judgment.stage5 === ans.id ? 'border-amber-500 bg-amber-500/10' : 'border-slate-700 hover:border-slate-500'}`}>{ans.text}</button>
-                                            ))}
-                                        </div>
-                                        {errorFeedback && <p className="mt-8 text-red-400 text-center font-bold animate-pulse italic">{errorFeedback}</p>}
-                                        <button onClick={() => {
-                                            if (judgment.stage5 === 'correct') nextStage();
-                                            else setErrorFeedback("데이터를 다시 읽으십시오. 대기시간(노란 지표)과 이탈률(빨간 막대)이 치솟는 지점이 어디입니까?");
-                                        }} className="w-full mt-10 bg-white text-slate-900 py-5 rounded-[20px] font-black text-lg transition-all active:scale-95 shadow-xl hover:bg-slate-100" disabled={!judgment.stage5}>최종 통찰 확정</button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {stage === 6 && (
-                            <div className="space-y-8 text-center fade-in">
-                                <h2 className="text-4xl font-black tracking-tighter italic uppercase mb-10">6. 최종 의사결정 (Final Decision)</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     {[
-                                        { id: 'opt1', title: '운영 자동화 (스마트 키오스크 도입)', desc: '점심 피크타임 주문 병목을 제거하여 대기 시간을 40% 단축하고 고객 경험을 개선합니다.', impact: '데이터 기반 최적해' },
-                                        { id: 'opt2', title: '원가 절감 (저렴한 원재료 교체)', desc: '단기 마진을 높이지만 현재 고객들이 고통받는 대기시간 문제와는 무관합니다.', impact: '데이터 미반영' },
+                                        { id: 'competitor', title: '경쟁사 등장 (매출 파이 감소)', data: '신규 매출액 지표', impact: '외부 요인' },
+                                        { id: 'waste', title: '운영 미숙 (원재료 폐기 증가)', data: '원재료 폐기량(kg) 지표', impact: '비용 요인' },
+                                        { id: 'retention', title: '고객 이탈 (단골 베이스 붕괴)', data: '재방문 매출액 지표', impact: '수익 요인' }
                                     ].map(opt => (
-                                        <button key={opt.id} onClick={() => setFinalDecision(opt.id)} className={`p-8 text-left border-4 rounded-[40px] transition-all relative ${finalDecision === opt.id ? 'border-amber-500 bg-white shadow-2xl scale-[1.02]' : 'border-slate-100 bg-white hover:border-slate-300'}`}>
-                                            <div className="flex justify-between items-center mb-4">
-                                                <span className="text-xl font-bold italic text-slate-800">{opt.title}</span>
-                                                <span className={`text-[10px] font-bold px-3 py-1.5 rounded-full uppercase ${finalDecision === opt.id ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-400'}`}>{opt.impact}</span>
+                                        <button key={opt.id} onClick={() => setSelectedPath(opt.id)} className={`p-8 text-left border-4 rounded-[32px] transition-all flex flex-col justify-between h-48 ${selectedPath === opt.id ? 'border-indigo-500 bg-white shadow-xl scale-105' : 'border-slate-100 bg-white opacity-70 hover:opacity-100'}`}>
+                                            <div>
+                                                <span className="text-[10px] bg-slate-100 px-2 py-1 rounded font-bold uppercase text-slate-500">{opt.impact}</span>
+                                                <h3 className="text-lg font-black mt-3 text-slate-900">{opt.title}</h3>
                                             </div>
-                                            <p className="text-sm text-slate-500 font-medium leading-relaxed">{opt.desc}</p>
+                                            <p className="text-xs text-indigo-600 font-bold bg-indigo-50 p-2 rounded-lg text-center mt-4">검증 지표: {opt.data}</p>
                                         </button>
                                     ))}
                                 </div>
-                                <button onClick={nextStage} className="w-full mt-10 bg-slate-900 text-white py-6 rounded-[32px] font-black text-2xl shadow-2xl hover:bg-slate-800 active:scale-95 transition-all uppercase italic tracking-widest" disabled={!finalDecision}>시뮬레이션 결과 리포트 발행</button>
+
+                                <div className="bg-slate-900 rounded-[32px] p-8 text-white text-center">
+                                    <button 
+                                        onClick={() => {
+                                            if (selectedPath === 'retention') nextStage();
+                                            else if (selectedPath === 'competitor') setErrorFeedback("함정입니다. 데이터 시트를 보면 '신규 고객 매출'은 1,400만~1,500만 원 선에서 꾸준히 유지되고 있습니다. 경쟁사가 우리 매장의 신규 유입을 막지는 못했습니다.");
+                                            else if (selectedPath === 'waste') setErrorFeedback("논리적 오류입니다. 폐기량이 12kg에서 38kg로 늘었지만, 커피 원두 26kg 추가 폐기가 영업이익 2,700만 원(-1,600만 -> -1,100만) 하락을 모두 설명할 수는 없습니다. 기여도가 너무 작습니다.");
+                                        }} 
+                                        className="w-full bg-white text-slate-900 py-5 rounded-2xl font-black text-xl hover:bg-slate-100 disabled:opacity-30 transition-all"
+                                        disabled={!selectedPath}
+                                    >
+                                        논리 검증하기
+                                    </button>
+                                    {errorFeedback && <p className="mt-6 text-red-400 font-bold text-sm bg-red-900/50 p-4 rounded-xl text-left leading-relaxed">{errorFeedback}</p>}
+                                </div>
                             </div>
                         )}
 
-                        {stage === 7 && (
-                            <div className="min-h-screen bg-slate-900 fixed inset-0 z-[200] flex items-center justify-center p-6 fade-in">
-                                <div className="max-w-2xl w-full bg-white rounded-[60px] overflow-hidden shadow-2xl">
-                                    <div className="bg-emerald-500 p-20 text-center text-white relative">
-                                        <div className="w-24 h-24 bg-white/20 rounded-[35px] flex items-center justify-center mx-auto mb-10 rotate-12 backdrop-blur-md border border-white/30 shadow-2xl">
-                                            <Icon name="check-circle-2" size={60} />
+                        {/* Stage 3: 세그먼트 스킵하고 바로 가설 쿼리로 (심도 깊은 쿼리 빌딩) */}
+                        {stage === 3 && (
+                            <div className="space-y-8 fade-in">
+                                <h2 className="text-4xl font-black tracking-tighter italic uppercase">3. 가설 검증 쿼리 설계 (조합형)</h2>
+                                <div className="p-6 bg-indigo-50 border border-indigo-200 rounded-2xl flex gap-4 text-indigo-900 font-medium">
+                                    <Icon name="terminal" className="shrink-0 text-indigo-600" />
+                                    <p>앞서 당신은 <strong>'단골 고객의 이탈'</strong>이 문제의 핵심임을 파악했습니다. 그렇다면 이 단골들은 <span className="font-black underline">어떤 조건에서, 왜</span> 매장을 떠났을까요? 데이터 추출 엔진을 설계하여 증거를 찾으십시오.</p>
+                                </div>
+
+                                <div className="bg-white rounded-[40px] border border-slate-200 p-10 shadow-xl flex flex-col">
+                                    <div className="space-y-10">
+                                        <section>
+                                            <div className="flex justify-between items-center mb-4">
+                                                <p className="text-sm font-black text-slate-800 uppercase tracking-widest"><span className="text-indigo-600">1. Dimension</span> (분석 기준 선택)</p>
+                                                {queryConfig.dimension && <span className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-bold">{queryConfig.dimension}</span>}
+                                            </div>
+                                            <div className="flex flex-wrap gap-3">
+                                                {['시간대별', '요일별', '메뉴 카테고리별'].map(d => (
+                                                    <button key={d} onClick={() => setQueryConfig({...queryConfig, dimension: d})} className={`px-6 py-3 rounded-2xl border-2 font-bold text-sm transition-all ${queryConfig.dimension === d ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'border-slate-200 text-slate-600 hover:border-indigo-300'}`}>{d}</button>
+                                                ))}
+                                            </div>
+                                        </section>
+                                        
+                                        <section>
+                                            <div className="flex justify-between items-center mb-4">
+                                                <p className="text-sm font-black text-slate-800 uppercase tracking-widest"><span className="text-indigo-600">2. Metric</span> (측정 값 선택)</p>
+                                                {queryConfig.metric && <span className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-bold">{queryConfig.metric}</span>}
+                                            </div>
+                                            <div className="flex flex-wrap gap-3">
+                                                {['평균 객단가 변화', '원재료 소모량 추이', '대기시간 및 이탈률'].map(m => (
+                                                    <button key={m} onClick={() => setQueryConfig({...queryConfig, metric: m})} className={`px-6 py-3 rounded-2xl border-2 font-bold text-sm transition-all ${queryConfig.metric === m ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'border-slate-200 text-slate-600 hover:border-indigo-300'}`}>{m}</button>
+                                                ))}
+                                            </div>
+                                        </section>
+
+                                        <section>
+                                            <div className="flex justify-between items-center mb-4">
+                                                <p className="text-sm font-black text-slate-800 uppercase tracking-widest"><span className="text-indigo-600">3. Target Filter</span> (데이터 필터링)</p>
+                                                {queryConfig.filter && <span className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-bold">{queryConfig.filter}</span>}
+                                            </div>
+                                            <div className="flex flex-wrap gap-3">
+                                                {['신규 유입 고객', '단골(재방문) 고객', '포장(Take-out) 고객'].map(f => (
+                                                    <button key={f} onClick={() => setQueryConfig({...queryConfig, filter: f})} className={`px-6 py-3 rounded-2xl border-2 font-bold text-sm transition-all ${queryConfig.filter === f ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'border-slate-200 text-slate-600 hover:border-indigo-300'}`}>{f}</button>
+                                                ))}
+                                            </div>
+                                        </section>
+                                    </div>
+                                    
+                                    {errorFeedback && <p className="mt-8 text-red-500 font-bold bg-red-50 p-4 rounded-xl text-center">{errorFeedback}</p>}
+
+                                    <button 
+                                        onClick={executeQuery} 
+                                        className="mt-12 bg-slate-900 text-white py-6 rounded-3xl font-black text-xl hover:bg-slate-800 transition-all uppercase tracking-widest shadow-2xl"
+                                    >
+                                        <Icon name="play" className="mr-2" /> 선택한 조건으로 쿼리 실행
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Stage 4: 쿼리 결과 판단 (실패 or 성공) */}
+                        {stage === 4 && (
+                            <div className="space-y-8 fade-in">
+                                <h2 className="text-4xl font-black tracking-tighter italic">4. 분석 결과 해석</h2>
+                                
+                                {queryResult === 'fail' ? (
+                                    <div className="bg-white p-16 rounded-[48px] border-4 border-dashed border-slate-300 text-center flex flex-col items-center">
+                                        <div className="p-6 bg-slate-100 rounded-full mb-8"><Icon name="bar-chart" size={64} className="text-slate-300" /></div>
+                                        <h3 className="text-3xl font-black text-slate-800 mb-4">유의미한 패턴 없음</h3>
+                                        <p className="text-slate-500 font-medium mb-8 leading-relaxed">
+                                            조합하신 조건(<span className="font-bold text-indigo-600">[{queryConfig.dimension}], [{queryConfig.metric}], [{queryConfig.filter}]</span>)으로는 <br/>적자를 발생시킨 핵심 문제를 도출할 수 없습니다.<br/>
+                                            가설이 틀렸거나 엉뚱한 데이터를 보고 있습니다.
+                                        </p>
+                                        <button onClick={prevStage} className="px-10 py-5 bg-indigo-600 text-white rounded-2xl font-black shadow-xl hover:bg-indigo-700 transition-all flex items-center gap-3">
+                                            <Icon name="refresh-cw" /> 쿼리 다시 설계하기
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="bg-white p-12 rounded-[48px] shadow-2xl border border-slate-200">
+                                        <div className="flex justify-between items-center mb-10">
+                                            <h4 className="text-sm font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-full">Success: 확실한 패턴 검출</h4>
+                                            <p className="text-xs font-bold text-slate-400">조건: 시간대별 x 대기/이탈률 x 단골고객</p>
                                         </div>
-                                        <h2 className="text-6xl font-black mb-4 tracking-tighter uppercase italic">Mission Success</h2>
-                                        <p className="text-emerald-100 font-bold text-lg tracking-widest uppercase underline decoration-2 underline-offset-8">Data Insight Professional</p>
+                                        <div className="h-80 w-full mb-12">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={[
+                                                    { time: '08:00 - 10:30', wait: 8, churn: 4 },
+                                                    { time: '11:30 - 13:30', wait: 28, churn: 88 },
+                                                    { time: '14:30 - 17:00', wait: 14, churn: 18 },
+                                                    { time: '18:00 - 20:00', wait: 6, churn: 3 },
+                                                ]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 900}} />
+                                                    <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{fontSize: 11}} />
+                                                    <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fontSize: 11}} />
+                                                    <Tooltip cursor={{fill: '#f8fafc'}} />
+                                                    <Bar yAxisId="left" dataKey="churn" name="이탈률(%)" radius={[8, 8, 0, 0]}>
+                                                        { [0,1,2,3].map((e, idx) => <Cell key={idx} fill={idx === 1 ? '#ef4444' : '#e2e8f0'} />)}
+                                                    </Bar>
+                                                    <Line yAxisId="right" type="monotone" dataKey="wait" stroke="#f59e0b" strokeWidth={5} name="대기시간(분)" dot={{r:6}} />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+
+                                        <div className="bg-slate-900 rounded-[32px] p-10 text-white">
+                                            <p className="text-xl font-bold mb-8 leading-relaxed">
+                                                차트가 보여주는 <span className="text-amber-400 underline decoration-4 underline-offset-8">결정적 인과관계(Truth)</span>는 무엇입니까?
+                                            </p>
+                                            <div className="space-y-4">
+                                                {[
+                                                    { id: 'wrong1', text: '오전 시간대의 유입 부족이 고정비 부담으로 이어져 적자가 커졌다.' },
+                                                    { id: 'correct', text: '점심 피크타임(11:30~13:30)에 대기 시간이 28분까지 치솟으며 단골들의 88%가 이탈했다.' },
+                                                    { id: 'wrong2', text: '오후 시간대의 대기 시간 관리가 실패하면서 원재료 폐기량이 증가했다.' }
+                                                ].map(ans => (
+                                                    <button key={ans.id} onClick={() => setJudgmentStage5(ans.id)} className={`w-full text-left p-6 rounded-[24px] border-2 font-bold transition-all text-sm leading-relaxed ${judgmentStage5 === ans.id ? 'border-amber-500 bg-amber-500/20' : 'border-slate-700 hover:border-slate-500'}`}>{ans.text}</button>
+                                                ))}
+                                            </div>
+                                            {errorFeedback && <p className="mt-6 text-red-400 text-center font-bold animate-pulse">{errorFeedback}</p>}
+                                            <button onClick={() => {
+                                                if (judgmentStage5 === 'correct') nextStage();
+                                                else setErrorFeedback("차트에서 빨간색 막대(이탈률)와 노란색 선(대기시간)이 동시에 가장 높게 치솟는 X축(시간대) 구간을 확인하세요.");
+                                            }} className="w-full mt-10 bg-white text-slate-900 py-5 rounded-[20px] font-black text-lg transition-all active:scale-95 shadow-xl hover:bg-slate-100" disabled={!judgmentStage5}>인과 판독 확정</button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Stage 5: 최종 결정 */}
+                        {stage === 5 && (
+                            <div className="space-y-10 text-center fade-in pb-10">
+                                <h2 className="text-5xl font-black tracking-tighter italic uppercase mb-12">5. 최종 의사결정 (Action Plan)</h2>
+                                <p className="text-slate-500 font-bold mb-8">오직 당신이 찾아낸 데이터 기반의 인과관계를 해결할 수 있는 전략을 선택하십시오.</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                                    {[
+                                        { id: 'opt1', title: '운영 병목 제거 (스마트 오더 도입)', desc: '피크타임 대기 시간을 10분 이내로 단축하여 핵심 매출원인 단골 고객을 되찾습니다.', impact: '데이터 기반 최적해' },
+                                        { id: 'opt2', title: '원가 절감 (저렴한 원재료 변경)', desc: '단기적인 비용은 줄이지만 현재 고객 이탈의 근본 원인(대기 시간)은 해결하지 못합니다.', impact: '데이터 미반영' },
+                                        { id: 'opt3', title: '인건비 삭감 (파트타임 인원 감축)', desc: '비용은 삭감되나 대기 시간이 더 늘어나 폐업을 앞당기는 최악의 결정입니다.', impact: '상황 악화' },
+                                        { id: 'opt4', title: '신메뉴 개발 및 대대적 홍보', desc: '신규 유입은 늘릴 수 있으나 긴 대기 시간으로 인해 이들도 곧 이탈할 것입니다.', impact: '핵심 핀트 어긋남' }
+                                    ].map(opt => (
+                                        <button key={opt.id} onClick={() => setFinalDecision(opt.id)} className={`p-8 border-4 rounded-[40px] transition-all relative ${finalDecision === opt.id ? 'border-indigo-500 bg-indigo-50 shadow-2xl scale-[1.02]' : 'border-slate-100 bg-white hover:border-slate-300'}`}>
+                                            <div className="flex justify-between items-start mb-4">
+                                                <span className="text-2xl font-black italic text-slate-900">{opt.title}</span>
+                                            </div>
+                                            <p className="text-sm text-slate-600 font-bold leading-relaxed">{opt.desc}</p>
+                                        </button>
+                                    ))}
+                                </div>
+                                <button onClick={nextStage} className="w-full mt-12 bg-slate-900 text-white py-8 rounded-[40px] font-black text-2xl shadow-2xl hover:bg-slate-800 active:scale-95 transition-all uppercase italic tracking-widest" disabled={!finalDecision}>최종 리포트 발행</button>
+                            </div>
+                        )}
+
+                        {/* Stage 6: 결과 화면 */}
+                        {stage === 6 && (
+                            <div className="min-h-screen bg-slate-900 fixed inset-0 z-[200] flex items-center justify-center p-6 fade-in overflow-auto scrollbar-hide py-20">
+                                <div className="max-w-3xl w-full bg-white rounded-[60px] overflow-hidden shadow-2xl">
+                                    <div className={`p-20 text-center text-white relative ${finalDecision === 'opt1' ? 'bg-emerald-600' : 'bg-red-600'}`}>
+                                        <div className="w-28 h-28 bg-white/20 rounded-[40px] flex items-center justify-center mx-auto mb-10 rotate-12 backdrop-blur-md shadow-2xl border border-white/30">
+                                            <Icon name={finalDecision === 'opt1' ? "award" : "x-circle"} size={60} />
+                                        </div>
+                                        <h2 className="text-6xl font-black mb-4 tracking-tighter uppercase italic">{finalDecision === 'opt1' ? 'Turnaround Success' : 'Business Failed'}</h2>
+                                        <p className="text-white/80 font-bold text-lg tracking-widest uppercase">{finalDecision === 'opt1' ? '최적의 데이터 기반 의사결정' : '잘못된 의사결정으로 인한 폐업'}</p>
                                     </div>
                                     <div className="p-16">
-                                        <div className="grid grid-cols-3 gap-6 mb-16">
-                                            <div className="p-8 bg-slate-50 rounded-[40px] text-center border border-slate-100">
-                                                <p className="text-[10px] font-bold text-slate-400 mb-2 uppercase">Revenue Impact</p>
-                                                <p className="text-3xl font-black text-indigo-600">SUCCESS</p>
-                                            </div>
-                                            <div className="p-8 bg-slate-50 rounded-[40px] text-center border border-slate-100">
-                                                <p className="text-[10px] font-bold text-slate-400 mb-2 uppercase">Churn Rate</p>
-                                                <p className="text-3xl font-black text-emerald-600">-48.2%</p>
-                                            </div>
-                                            <div className="p-8 bg-slate-50 rounded-[40px] text-center border border-slate-100">
-                                                <p className="text-[10px] font-bold text-slate-400 mb-2 uppercase">Score</p>
-                                                <p className="text-3xl font-black text-amber-600">PERFECT</p>
-                                            </div>
-                                        </div>
-                                        <div className="bg-slate-900 p-10 rounded-[45px] text-white shadow-2xl border-t-8 border-emerald-500 mb-12">
-                                            <p className="text-lg text-slate-300 leading-relaxed italic font-medium">
-                                                "당신은 AI의 정답에 안주하지 않고, <strong>데이터를 파헤쳐 '진짜 범인'</strong>을 찾아냈습니다. 
-                                                데이터가 가리키는 병목(Bottleneck)인 '대기 시간'을 해결한 당신의 결단은 가장 과학적인 의사결정이었습니다."
+                                        <div className="bg-slate-50 p-10 rounded-[40px] text-center border border-slate-200 mb-10">
+                                            <h4 className="font-black text-2xl text-slate-800 mb-4">결과 요약</h4>
+                                            <p className="text-slate-600 leading-relaxed font-medium">
+                                                {finalDecision === 'opt1' 
+                                                    ? "당신은 함정(경쟁사 등장, 재료 폐기)에 속지 않고, 데이터 조합을 통해 '피크타임 대기시간'이라는 병목을 정확히 찾아냈습니다. 자동화 시스템 도입으로 대기시간이 8분으로 단축되었고, 단골 고객이 72% 돌아오며 영업이익은 흑자로 전환되었습니다." 
+                                                    : "적자의 근본 원인(대기 시간으로 인한 단골 이탈)을 파악했음에도 불구하고, 관련 없는 해결책을 선택했습니다. 서비스 지연 문제는 더욱 심각해졌고 결국 카페는 3개월 뒤 폐업했습니다."}
                                             </p>
                                         </div>
-                                        <button onClick={reset} className="w-full py-6 bg-slate-100 rounded-[30px] font-bold text-slate-500 hover:bg-slate-200 transition-all active:scale-95 uppercase tracking-widest text-xs">새로운 분석 시나리오 도전</button>
+                                        <button onClick={reset} className="w-full py-6 bg-slate-900 text-white rounded-[30px] font-black hover:bg-slate-800 transition-all active:scale-95 uppercase tracking-widest">분석 훈련 다시 하기</button>
                                     </div>
                                 </div>
                             </div>
                         )}
                     </main>
 
-                    {stage > 0 && stage < 7 && (
+                    {/* 하단 고정 플로팅 버튼바 */}
+                    {stage > 0 && stage < 6 && (
                         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex gap-4 z-50">
-                            <button onClick={prevStage} className="px-6 py-3 bg-white/80 backdrop-blur-md text-slate-500 border border-slate-200 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 shadow-xl flex items-center gap-2 transition-all">
-                                <Icon name="arrow-left" size={16}/> Back
-                            </button>
-                            <button onClick={() => setShowDataSheet(true)} className="px-6 py-3 bg-white/80 backdrop-blur-md text-indigo-600 border border-indigo-200 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-50 shadow-xl flex items-center gap-2 transition-all">
-                                <Icon name="table" size={16}/> View Data
+                            {stage !== 4 && (
+                                <button onClick={prevStage} className="px-8 py-4 bg-white/90 backdrop-blur-md text-slate-500 border border-slate-200 rounded-3xl font-black text-sm uppercase tracking-widest hover:bg-slate-100 shadow-2xl flex items-center gap-2 transition-all">
+                                    <Icon name="arrow-left" size={18}/> Back
+                                </button>
+                            )}
+                            <button onClick={() => setShowDataSheet(true)} className="px-8 py-4 bg-indigo-600 text-white rounded-3xl font-black text-sm uppercase tracking-widest hover:bg-indigo-700 shadow-2xl flex items-center gap-2 transition-all">
+                                <Icon name="table" size={18}/> Data Sheet
                             </button>
                         </div>
                     )}
