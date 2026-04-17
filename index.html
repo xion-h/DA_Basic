@@ -62,19 +62,19 @@
             const rawData = useMemo(() => [
                 { month: '1월', rev: 5200, cost: 3600, profit: 1600, newRev: 1400, oldRev: 3800, waitTime: 8, waste: 12, takeoutPct: 40, mktSpend: 150, csScore: 9.2 },
                 { month: '2월', rev: 4900, cost: 3650, profit: 1250, newRev: 1450, oldRev: 3450, waitTime: 9, waste: 14, takeoutPct: 41, mktSpend: 150, csScore: 9.0 },
-                { month: '3월', rev: 4300, cost: 3750, profit: 550,  newRev: 1500, oldRev: 2800, waitTime: 13, waste: 25, takeoutPct: 40, mktSpend: 200, csScore: 8.1 }, // 프랜차이즈 오픈, 매니저 교체, 마케팅비 증가
+                { month: '3월', rev: 4300, cost: 3750, profit: 550,  newRev: 1500, oldRev: 2800, waitTime: 13, waste: 25, takeoutPct: 40, mktSpend: 200, csScore: 8.1 },
                 { month: '4월', rev: 3800, cost: 3800, profit: 0,    newRev: 1450, oldRev: 2350, waitTime: 17, waste: 28, takeoutPct: 39, mktSpend: 200, csScore: 7.5 }, 
-                { month: '5월', rev: 3300, cost: 3950, profit: -650, newRev: 1550, oldRev: 1750, waitTime: 22, waste: 32, takeoutPct: 40, mktSpend: 250, csScore: 6.8 }, // 적자 시작, 마케팅 집중
+                { month: '5월', rev: 3300, cost: 3950, profit: -650, newRev: 1550, oldRev: 1750, waitTime: 22, waste: 32, takeoutPct: 40, mktSpend: 250, csScore: 6.8 }, 
                 { month: '6월', rev: 3000, cost: 4100, profit: -1100,newRev: 1480, oldRev: 1520, waitTime: 28, waste: 38, takeoutPct: 41, mktSpend: 250, csScore: 6.2 }, 
             ], []);
 
-            // 4단계 차트용 세분화된 데이터 (임계점 학습용)
+            // 4단계 차트용 세분화된 데이터
             const chartData = useMemo(() => [
                 { time: '08:00 - 10:30', wait: 8, churn: 4, total: 45, left: 2 },
                 { time: '11:30 - 12:30', wait: 22, churn: 65, total: 80, left: 52 },
                 { time: '12:30 - 13:30', wait: 28, churn: 88, total: 120, left: 105 },
                 { time: '14:30 - 17:00', wait: 14, churn: 18, total: 60, left: 11 },
-            ], []); // 시간대별(시계열) 순서대로 정렬 유지, 현실적인 일평균 모수로 스케일 조정
+            ], []);
 
             const steps = ["문제 정의", "가설 수립", "검증전략 설계", "데이터 추출·해석", "실행과제 도출"];
             const reviewSteps = ["1. 지표의 위계 (목적 vs 수단)", "2. 표면적 현상 vs 근본 원인", "3. 검증 모델의 필수 조건", "4. 임계점(Threshold)의 발견", "5. 기회비용과 솔루션 일치"];
@@ -108,19 +108,13 @@
                         </div>
                         <div className="p-5 bg-indigo-50 border-b border-indigo-100 shrink-0 flex gap-4 text-indigo-900 font-medium text-sm leading-relaxed">
                             <Icon name="info" className="text-indigo-600 shrink-0 mt-1" />
-                            <div className="space-y-3 w-full">
+                            <div className="space-y-3 w-full text-sm">
                                 <p>
                                     <strong className="font-black text-indigo-800 text-base block mb-1">CEO의 브리핑:</strong>
-                                    "3월, 매장 건너편에 대형 프랜차이즈 <strong className="text-indigo-800 bg-indigo-200 px-1.5 py-0.5 rounded">스타커피</strong>가 오픈한 이후 매니저를 교체했소.<br/>
+                                    "3월, 매장 건너편에 대형 프랜차이즈 <strong className="text-indigo-800 bg-indigo-200 px-1.5 py-0.5 rounded font-black">스타커피</strong>가 오픈한 이후 매니저를 교체했소.<br/>
                                     <span className="bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-bold">마케팅 비용을 늘렸는데도</span> 오히려 적자로 전환됐고, 고객 만족도(CS)마저 곤두박질치고 있소.<br/>
                                     도대체 우리 매장의 진짜 문제가 뭐요?"
                                 </p>
-                                <div className="bg-red-50 p-3 rounded-lg border border-red-100 mt-2">
-                                    <p className="text-red-600 font-bold text-xs flex items-center gap-1 mb-1">
-                                        <Icon name="alert-triangle" size={14}/> 분석가 주의사항
-                                    </p>
-                                    <p className="text-red-500 text-xs">결과(후행지표)와 원인(선행지표)을 혼동하지 마십시오. 표면적인 현상 뒤에 숨은 '진짜 레버리지'를 찾아야 합니다.</p>
-                                </div>
                             </div>
                         </div>
                         <div className="p-6 overflow-auto scrollbar-hide">
@@ -166,31 +160,50 @@
             if (stage === 0) return (
                 <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 relative overflow-hidden">
                     <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+')] opacity-20"></div>
-                    <div className="max-w-3xl w-full bg-white rounded-[32px] shadow-2xl p-12 md:p-16 text-center relative z-10 fade-in border border-slate-800">
-                        <div className="inline-block p-6 bg-indigo-600 rounded-[24px] mb-8 shadow-xl shadow-indigo-500/30 transform -rotate-3">
-                            <Icon name="bar-chart-2" size={48} className="text-white" />
+                    <div className="max-w-[1200px] w-full bg-white rounded-[32px] shadow-2xl p-12 md:p-20 text-center relative z-10 fade-in border border-slate-800">
+                        <div className="inline-block p-6 bg-indigo-600 rounded-[24px] mb-10 shadow-xl shadow-indigo-500/30 transform -rotate-3">
+                            <Icon name="bar-chart-2" size={64} className="text-white" />
                         </div>
-                        <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tighter uppercase">데이터 분석 기획 마스터</h1>
-                        <p className="text-indigo-600 font-bold tracking-widest uppercase text-sm mb-10">Advanced Analytics Planning Simulator</p>
-                        <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 text-left mb-10 space-y-5">
-                            <p className="text-slate-800 font-black text-lg mb-2 flex items-center gap-2"><Icon name="target" className="text-amber-500"/> 미션 브리핑:</p>
-                            <p className="text-slate-600 text-sm md:text-base leading-relaxed flex gap-3">
-                                <Icon name="check-circle" size={20} className="text-emerald-500 shrink-0 mt-1"/> 
-                                <span>6개월 만에 흑자에서 적자로 돌아선 '데이터 빈즈'를 살려내야 합니다.<br/>당신은 CEO의 특명을 받은 데이터 전략가입니다.</span>
-                            </p>
-                            <p className="text-slate-600 text-sm md:text-base leading-relaxed flex gap-3">
-                                <Icon name="check-circle" size={20} className="text-emerald-500 shrink-0 mt-1"/> 
-                                <span><strong>문제정의 → 가설수립 → 검증설계 → 데이터 추출/해석 → 실행과제</strong><br/>총 5단계를 철저한 논리에 기반해 기획하십시오.</span>
-                            </p>
-                            <div className="p-4 bg-red-50 rounded-xl border border-red-100 flex gap-3 mt-4">
-                                <Icon name="alert-triangle" size={20} className="text-red-500 shrink-0 mt-1"/>
-                                <span className="text-red-700 font-bold text-sm md:text-base leading-relaxed">
-                                    경고: 데이터 시트에는 실무처럼 의미 없는 노이즈(Noise)와 함정이 섞여 있습니다.<br/>
-                                    현상과 원인을 혼동하는 논리적 비약을 저지르면 즉시 피드백이 가해집니다.
-                                </span>
+                        <h1 className="text-5xl font-black text-slate-900 mb-6 tracking-tighter uppercase italic">데이터 분석 기획 마스터</h1>
+                        <p className="text-indigo-600 font-black tracking-widest uppercase text-lg mb-12 border-b-4 border-indigo-100 inline-block pb-2">Advanced Analytics Planning Simulator</p>
+                        
+                        <div className="bg-slate-50 p-10 rounded-[32px] border border-slate-200 text-left mb-12 space-y-10">
+                            <div className="space-y-4">
+                                <p className="text-slate-800 font-black text-2xl flex items-center gap-3"><Icon name="target" className="text-amber-500" size={28}/> 미션 브리핑:</p>
+                                <p className="text-slate-600 text-lg md:text-xl leading-relaxed font-medium pl-10 border-l-4 border-slate-200">
+                                    강남 오피스 상권의 명소였던 '데이터 빈즈'가 6개월 만에 흑자에서 적자로 돌아섰습니다.<br/>
+                                    당신은 CEO의 특명을 받은 데이터 전략가가 되어 위기의 실체를 규명해야 합니다.
+                                </p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <p className="text-slate-800 font-black text-2xl flex items-center gap-3"><Icon name="navigation" className="text-indigo-500" size={28}/> 기획 프로세스:</p>
+                                <div className="pl-10 border-l-4 border-indigo-500 space-y-4">
+                                    <p className="text-indigo-900 text-lg md:text-xl leading-relaxed font-black uppercase tracking-tight italic">
+                                        문제정의 → 가설수립 → 검증설계 → 데이터 추출/해석 → 실행과제
+                                    </p>
+                                    <p className="text-slate-700 text-base md:text-lg font-bold leading-relaxed">
+                                        본 시뮬레이션은 위 <span className="text-indigo-600">5단계의 논리적 연결성</span>을 직접 구축하며 체득할 수 있도록 구성되어 있습니다.<br/>
+                                        데이터 기획의 정석을 익히기 위해 집중하여 학습에 임해 주시기 바랍니다.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="p-6 bg-red-50 rounded-2xl border-2 border-red-100 flex gap-5">
+                                <Icon name="alert-triangle" size={32} className="text-red-500 shrink-0 mt-1"/>
+                                <div className="space-y-1">
+                                    <p className="text-red-700 font-black text-lg uppercase italic tracking-tighter">Warning: Logical Trap</p>
+                                    <p className="text-red-600 font-bold text-base leading-relaxed">
+                                        데이터 시트에는 실무 현장처럼 의미 없는 <span className="bg-red-200 px-1 rounded text-red-900">노이즈(Noise)와 함정</span>이 섞여 있습니다.<br/>
+                                        현상과 원인을 혼동하거나 감에 의존하는 결정을 내리면 즉시 기획 실패로 간주됩니다.
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                        <button onClick={nextStage} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all active:scale-95 shadow-xl">실무 분석 프로젝트 투입</button>
+                        
+                        <button onClick={nextStage} className="w-full bg-slate-900 text-white py-8 rounded-[24px] font-black text-2xl hover:bg-indigo-600 transition-all active:scale-95 shadow-2xl flex items-center justify-center gap-4 group">
+                            실무 분석 프로젝트 투입 <Icon name="arrow-right" size={28} className="group-hover:translate-x-2 transition-transform"/>
+                        </button>
                     </div>
                 </div>
             );
@@ -201,7 +214,7 @@
                         <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-indigo-600 rounded-lg"><Icon name="cpu" size={20} /></div>
-                                <h1 className="font-black tracking-tighter uppercase italic text-lg">Analytics Workspace</h1>
+                                <h1 className="font-black tracking-tighter uppercase italic text-lg">Analysis Workspace</h1>
                             </div>
                             {stage < 7 && (
                                 <div className="flex flex-wrap gap-1 justify-center">
@@ -222,82 +235,88 @@
                         {/* Stage 1: 문제 정의 */}
                         {stage === 1 && (
                             <div className="space-y-8 fade-in">
-                                <div className="flex justify-between items-end">
+                                <div className="flex justify-between items-end gap-6 text-left">
                                     <div className="space-y-2">
-                                        <h2 className="text-3xl font-black tracking-tight">1. 문제 정의 (Problem Definition)</h2>
-                                        <p className="text-slate-500 font-medium">데이터 시트를 확인 후, 분석 프로젝트의 방향타가 될 '문제 정의'를 논리적으로 완성하십시오.</p>
+                                        <h2 className="text-3xl font-black tracking-tight flex items-center gap-3 italic"><Icon name="flag" className="text-indigo-600"/> 1. 문제 정의 (Problem Definition)</h2>
+                                        <p className="text-slate-500 font-medium leading-relaxed">분석 프로젝트의 방향타가 될 '문제 정의'를 논리적으로 완성하십시오.</p>
                                     </div>
-                                    <button onClick={() => setShowDataSheet(true)} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-indigo-700 transition-all animate-pulse"><Icon name="table" size={18}/> 원본 데이터 시트 열람</button>
+                                    <button onClick={() => setShowDataSheet(true)} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-indigo-700 transition-all animate-pulse shrink-0"><Icon name="table" size={18}/> 원본 데이터 시트 열람</button>
                                 </div>
 
-                                <div className="bg-white p-8 rounded-[24px] shadow-sm border border-slate-200">
-                                    <h4 className="text-sm font-bold text-slate-500 mb-6 uppercase tracking-widest text-center">전체 손익 추이 (P&L Trend)</h4>
-                                    <div className="h-64 w-full">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <ComposedChart data={rawData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 700}} />
-                                                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12}} />
-                                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
-                                                <Area type="monotone" dataKey="rev" fill="#818cf8" fillOpacity={0.1} stroke="none" />
-                                                <Line type="monotone" dataKey="rev" name="매출(만원)" stroke="#6366f1" strokeWidth={4} />
-                                                <Line type="monotone" dataKey="cost" name="비용(만원)" stroke="#94a3b8" strokeWidth={3} strokeDasharray="6 6" />
-                                            </ComposedChart>
-                                        </ResponsiveContainer>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    <div className="bg-slate-100 border border-slate-200 p-8 rounded-[32px] flex flex-col justify-center text-left">
+                                        <h4 className="text-slate-900 font-black text-xl mb-4 flex items-center gap-2 underline decoration-indigo-300 decoration-4 underline-offset-4 italic">Case Scenario Summary</h4>
+                                        <div className="space-y-4 text-slate-600 text-base leading-relaxed font-medium">
+                                            <p><strong className="text-indigo-600">현상:</strong> 2년간 안정적이던 월 매출 5,200만원이 단 6개월 만에 3,000만원으로 급감했습니다.</p>
+                                            <p><strong className="text-red-500">위기:</strong> 4월 손익분기점을 통과한 뒤, 5월부터는 매달 적자가 누적되어 폐업을 고려해야 하는 한계 상황입니다.</p>
+                                            <p><strong className="text-slate-900">미션:</strong> 감으로 마케팅을 하거나 가격을 내리는 대신, <strong>정확히 어느 타겟의 무엇을 해결하여 적자를 탈출할지</strong> 정의해야 합니다.</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200">
+                                        <h4 className="text-xs font-bold text-slate-400 mb-6 uppercase tracking-widest text-center italic">카페 전체 손익 추이 (P&L Trend)</h4>
+                                        <div className="h-64 w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <ComposedChart data={rawData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 700}} />
+                                                    <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12}} />
+                                                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                                                    <Area type="monotone" dataKey="rev" fill="#818cf8" fillOpacity={0.1} stroke="none" />
+                                                    <Line type="monotone" dataKey="rev" name="매출(만원)" stroke="#6366f1" strokeWidth={4} />
+                                                    <Line type="monotone" dataKey="cost" name="비용(만원)" stroke="#94a3b8" strokeWidth={3} strokeDasharray="6 6" />
+                                                </ComposedChart>
+                                            </ResponsiveContainer>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-900 rounded-[24px] p-8 text-white shadow-2xl space-y-8">
-                                    <h3 className="text-amber-400 font-black uppercase tracking-widest text-sm flex items-center gap-2"><Icon name="edit-3" size={18}/> 문제 정의 프레임워크</h3>
+                                <div className="bg-slate-900 rounded-[24px] p-8 text-white shadow-2xl space-y-8 text-left">
+                                    <h3 className="text-amber-400 font-black uppercase tracking-widest text-sm flex items-center gap-2"><Icon name="edit-3" size={18}/> 문제 정의 프레임워크 완성</h3>
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <div className="space-y-3">
-                                            <p className="font-bold text-indigo-300">Q1. 목적 (무엇을 바꿀 것인가?)</p>
-                                            {['외형적 매출 규모의 확대', '적자 구조 개선(이익 흑자 전환)', '고객 만족도(CS) 9점 달성'].map(opt => (
-                                                <button key={opt} onClick={() => setS1Decision(opt)} className={`w-full text-left p-4 rounded-xl border-2 transition-all text-sm font-bold ${s1Decision === opt ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-700 text-slate-300 hover:border-slate-500'}`}>{opt}</button>
+                                            <p className="font-bold text-indigo-300">Q1. 결정 (무엇을 바꿀 것인가?)</p>
+                                            {['외형적 매출 파이 확대', '적자 구조 개선(이익 회복)', '마케팅 채널 다각화'].map(opt => (
+                                                <button key={opt} onClick={() => setS1Decision(opt)} className={`w-full text-left p-4 rounded-xl border-2 transition-all text-sm font-bold ${s1Decision === opt ? 'border-indigo-500 bg-indigo-500 text-white shadow-lg' : 'border-slate-700 text-slate-300 hover:border-slate-500'}`}>{opt}</button>
                                             ))}
                                         </div>
                                         <div className="space-y-3">
-                                            <p className="font-bold text-emerald-300">Q2. 타겟 (누구에 대한 결정인가?)</p>
-                                            {['마케팅 유입 신규 고객', '재방문(단골) 고객', '포장(Take-out) 고객'].map(opt => (
-                                                <button key={opt} onClick={() => setS1Target(opt)} className={`w-full text-left p-4 rounded-xl border-2 transition-all text-sm font-bold ${s1Target === opt ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-700 text-slate-300 hover:border-slate-500'}`}>{opt}</button>
+                                            <p className="font-bold text-emerald-300">Q2. 대상 (누구에 대한 결정인가?)</p>
+                                            {['신규 유입 고객', '재방문(단골) 고객', '포장(Take-out) 고객'].map(opt => (
+                                                <button key={opt} onClick={() => setS1Target(opt)} className={`w-full text-left p-4 rounded-xl border-2 transition-all text-sm font-bold ${s1Target === opt ? 'border-emerald-500 bg-emerald-500 text-white shadow-lg' : 'border-slate-700 text-slate-300 hover:border-slate-500'}`}>{opt}</button>
                                             ))}
                                         </div>
                                         <div className="space-y-3">
-                                            <p className="font-bold text-amber-300">Q3. 기준 (성공의 평가 지표는?)</p>
-                                            {['원재료 폐기량 10kg 미만', '영업이익률 +10% 복귀', '마케팅 투자 대비 수익률(ROI) 개선'].map(opt => (
-                                                <button key={opt} onClick={() => setS1Criteria(opt)} className={`w-full text-left p-4 rounded-xl border-2 transition-all text-sm font-bold ${s1Criteria === opt ? 'border-amber-500 bg-amber-500 text-white' : 'border-slate-700 text-slate-300 hover:border-slate-500'}`}>{opt}</button>
+                                            <p className="font-bold text-amber-300">Q3. 기준 (무엇이 개선되면 성공인가?)</p>
+                                            {['원재료 폐기량 10kg 미만', '영업이익 흑자 전환', 'SNS 리뷰 20% 증가'].map(opt => (
+                                                <button key={opt} onClick={() => setS1Criteria(opt)} className={`w-full text-left p-4 rounded-xl border-2 transition-all text-sm font-bold ${s1Criteria === opt ? 'border-amber-500 bg-amber-500 text-white shadow-lg' : 'border-slate-700 text-slate-300 hover:border-slate-500'}`}>{opt}</button>
                                             ))}
                                         </div>
                                     </div>
 
-                                    <div className="p-6 bg-slate-800 rounded-xl border border-slate-700 flex flex-col gap-4">
+                                    <div className="p-8 bg-slate-800 rounded-xl border border-slate-700 flex flex-col gap-4">
                                         <p className="text-xs text-slate-400 uppercase tracking-widest font-bold">최종 문제 정의(Problem Statement)</p>
-                                        <p className="text-lg leading-relaxed font-medium text-white">
-                                            우리는 <span className="text-emerald-400 font-bold border-b-2 border-emerald-400/50 pb-0.5">{s1Target || '[타겟 미정]'}</span>을 대상으로 하여<br/>
-                                            <span className="text-indigo-400 font-bold border-b-2 border-indigo-400/50 pb-0.5 mt-2 inline-block">{s1Decision || '[목적 미정]'}</span>을 실행함으로써,<br/>
-                                            최종적으로 <span className="text-amber-400 font-bold border-b-2 border-amber-400/50 pb-0.5 mt-2 inline-block">{s1Criteria || '[성공 기준 미정]'}</span>을 달성하고자 한다.
+                                        <p className="text-xl leading-relaxed font-medium text-white italic">
+                                            "우리는 <span className="text-emerald-400 font-black border-b-2 border-emerald-400/50 pb-0.5">{s1Target || '[대상 미정]'}</span>을 대상으로 하여<br/>
+                                            <span className="text-indigo-400 font-black border-b-2 border-indigo-400/50 pb-0.5 mt-2 inline-block">{s1Decision || '[결정 미정]'}</span>을 실행함으로써,<br/>
+                                            최종적으로 <span className="text-amber-400 font-black border-b-2 border-amber-400/50 pb-0.5">{s1Criteria || '[기준 미정]'}</span>을 달성하고자 한다."
                                         </p>
                                     </div>
 
-                                    {errorFeedback && <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex gap-3 text-red-400 text-sm font-bold leading-relaxed"><Icon name="alert-circle" className="shrink-0 mt-0.5"/> {errorFeedback}</div>}
+                                    {errorFeedback && <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex gap-3 text-red-400 text-sm font-bold leading-relaxed shadow-inner"><Icon name="alert-circle" className="shrink-0 mt-0.5"/> {errorFeedback}</div>}
 
                                     <button 
                                         onClick={() => {
                                             if (!s1Decision || !s1Target || !s1Criteria) { setErrorFeedback("세 가지 항목을 모두 선택하여 문제 정의를 완성하십시오."); return; }
-                                            if (s1Decision === '고객 만족도(CS) 9점 달성') { setErrorFeedback("논리 검증 (목적): CS 점수는 '수단(선행지표)'이지 '궁극적 목적(후행지표)'이 아닙니다. 비즈니스의 사활이 걸린 가장 중요한 재무적 목표를 설정하십시오."); return; }
-                                            if (s1Decision !== '적자 구조 개선(이익 흑자 전환)') { setErrorFeedback("논리 검증 (목적): 현재 가장 치명적인 문제는 외형적 매출 증가가 아니라 비용 역전으로 인한 '적자'입니다."); return; }
-                                            
-                                            if (s1Target === '포장(Take-out) 고객') { setErrorFeedback("논리 검증 (타겟): 데이터 시트를 확인하십시오. '포장 고객 비중'은 40% 내외로 변동이 없습니다. 매출 급감의 원인이 되는 핵심 타겟이 아닙니다."); return; }
-                                            if (s1Target === '마케팅 유입 신규 고객') { setErrorFeedback("논리 검증 (타겟): 마케팅비를 늘렸음에도 '신규고객 매출'은 1,400만~1,500만원 선에서 유지되고 있습니다. 진짜 매출액이 급격히 빠져나간(3,800만→1,520만) 환부를 찾아야 합니다."); return; }
-                                            if (s1Target !== '재방문(단골) 고객') { setErrorFeedback("논리 검증 (타겟): 매출 하락을 주도하는 세그먼트를 다시 확인하십시오."); return; }
-                                            
-                                            if (s1Criteria !== '영업이익률 +10% 복귀') { setErrorFeedback("논리 검증 (기준): 문제 정의의 목적(Q1)이 '적자 개선'이므로, 평가 기준 역시 최상위 재무 지표인 영업이익과 Align 되어야 합니다."); return; }
+                                            if (s1Decision !== '적자 구조 개선(이익 회복)') { setErrorFeedback("논리 오류 (결정): 현재 가장 치명적인 문제는 외형적 매출 규모가 아니라 이익이 마이너스로 돌아선 '적자'입니다. 올바른 비즈니스 목적을 설정하십시오."); return; }
+                                            if (s1Target === '포장(Take-out) 고객') { setErrorFeedback("논리 오류 (대상): 데이터 시트를 확인하십시오. '포장 고객 비중'은 40% 내외로 일정합니다. 매출 급감의 원인이 아닙니다."); return; }
+                                            if (s1Target !== '재방문(단골) 고객') { setErrorFeedback("논리 오류 (대상): 1월과 6월을 비교하십시오. '신규고객 매출'은 1,400만→1,480만으로 안정적입니다. 진짜 매출액이 급격히 빠져나간(3,800만→1,520만) 환부를 찾아야 합니다."); return; }
+                                            if (s1Criteria !== '영업이익 흑자 전환') { setErrorFeedback("논리 오류 (기준): 비즈니스의 최종 생존 기준은 폐기량 감소나 리뷰 증가가 아닙니다. 최상위 재무 지표를 기준으로 삼으십시오."); return; }
                                             nextStage();
                                         }} 
-                                        className="w-full bg-white text-slate-900 py-5 rounded-xl font-black text-lg hover:bg-slate-100 transition-all active:scale-95"
+                                        className="w-full bg-white text-slate-900 py-6 rounded-2xl font-black text-xl hover:bg-indigo-50 shadow-xl transition-all active:scale-95"
                                     >
-                                        기획 논리 검증 및 다음 단계로
+                                        문제 정의 확정 및 논리 검증
                                     </button>
                                 </div>
                             </div>
@@ -305,35 +324,35 @@
 
                         {/* Stage 2: 가설 수립 */}
                         {stage === 2 && (
-                            <div className="space-y-8 fade-in">
+                            <div className="space-y-8 fade-in text-left">
                                 <div className="space-y-2">
                                     <h2 className="text-3xl font-black tracking-tight">2. 가설 수립 (Hypothesis Formulation)</h2>
                                     <p className="text-slate-500 font-medium">단골 고객의 매출이 왜 6개월 만에 반토막 났는지 설명하는, <strong>데이터로 증명 가능한 최적의 가설</strong>을 고르십시오.</p>
                                 </div>
                                 
-                                <div className="p-6 bg-amber-50 border-l-4 border-amber-500 rounded-xl flex gap-4 text-amber-900 font-medium text-sm leading-relaxed shadow-sm">
-                                    <Icon name="search" className="shrink-0 text-amber-600 mt-1" />
-                                    <div className="space-y-3 w-full">
-                                        <p className="font-bold text-amber-800 text-base">분석가 노트 & 가설 수립의 원칙</p>
+                                <div className="p-8 bg-amber-50 border-l-4 border-amber-500 rounded-xl flex gap-6 text-amber-900 font-medium text-sm leading-relaxed shadow-sm">
+                                    <Icon name="search" className="shrink-0 text-amber-600 mt-1" size={24} />
+                                    <div className="space-y-4 w-full text-base">
+                                        <p className="font-black text-amber-950 text-xl border-b border-amber-200 pb-2">Analysis Context & Hypothesis Principle</p>
                                         <p>
                                             3월 데이터부터 특이점이 관찰됩니다.<br/>
-                                            매장 건너편에 경쟁사 '스타커피'가 오픈했고, 매장 점장이 교체되었습니다.<br/>
-                                            원재료 폐기량과 대기 시간이 모두 증가했습니다.
+                                            매장 건너편에 대형 경쟁사 '스타커피'가 오픈했고, 매장 점장이 교체되었습니다.<br/>
+                                            원재료 폐기량과 대기 시간이 동시에 증가했습니다.
                                         </p>
-                                        <p className="pt-3 border-t border-amber-200/50 text-amber-950">
-                                            수많은 현상 중 <strong>'단골 고객의 이탈'과 가장 직접적인 인과관계(Causality)를 갖는 Root Cause</strong>를 식별해야 합니다.
+                                        <p className="pt-2 text-indigo-800 font-black italic">
+                                            "수많은 현상 중 '단골 고객의 이탈'과 가장 직접적인 인과관계(Causality)를 갖는 핵심 원인은 무엇인가?"
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 gap-4">
+                                <div className="grid grid-cols-1 gap-5">
                                     {[
-                                        { id: 'wrong1', text: "가설 A: 경쟁사 '스타커피'의 프로모션으로 인해, 마케팅비를 늘렸음에도 기존 단골 고객들이 경쟁사로 이동했을 것이다." },
-                                        { id: 'wrong2', text: "가설 B: 신임 매니저의 운영 미숙으로 원재료 폐기량(kg)이 증가하여 커피 맛이 변했고, 이로 인해 단골들이 실망하여 떠났을 것이다." },
-                                        { id: 'correct', text: "가설 C: 인력 개편 이후 피크타임 주문 처리 속도가 지연(대기시간 최대 28분)되었고, 속도에 민감한 오피스 상권의 단골들이 이탈했을 것이다." }
+                                        { id: 'wrong1', text: "가설 A: 경쟁사 '스타커피'의 공격적인 프로모션으로 인해, 마케팅비를 늘렸음에도 기존 단골들이 경쟁사로 이동했을 것이다." },
+                                        { id: 'wrong2', text: "가설 B: 매니저 교체 이후 원재료 폐기량(kg)이 증가하며 커피 품질이 일관되지 못하게 변했고, 단골들이 실망했을 것이다." },
+                                        { id: 'correct', text: "가설 C: 인력 개편 이후 피크타임의 주문 제조 속도가 지연(대기시간 급증)되었고, 서비스 속도에 민감한 오피스 상권의 단골들이 이탈했을 것이다." }
                                     ].map(opt => (
-                                        <button key={opt.id} onClick={() => setS2Hypothesis(opt.id)} className={`p-6 text-left border-2 rounded-2xl transition-all ${s2Hypothesis === opt.id ? 'border-indigo-600 bg-indigo-50 shadow-md scale-[1.01]' : 'border-slate-200 bg-white hover:border-indigo-300'}`}>
-                                            <p className="text-lg font-bold text-slate-800">{opt.text}</p>
+                                        <button key={opt.id} onClick={() => setS2Hypothesis(opt.id)} className={`p-8 text-left border-2 rounded-3xl transition-all shadow-sm ${s2Hypothesis === opt.id ? 'border-indigo-600 bg-indigo-50 shadow-indigo-100 scale-[1.02]' : 'border-slate-200 bg-white hover:border-indigo-300'}`}>
+                                            <p className="text-xl font-bold text-slate-800">{opt.text}</p>
                                         </button>
                                     ))}
                                 </div>
@@ -343,7 +362,7 @@
                                     <button 
                                         onClick={() => {
                                             if (!s2Hypothesis) { setErrorFeedback("가설을 선택하십시오."); return; }
-                                            if (s2Hypothesis === 'wrong1') { setErrorFeedback("논리 반박: 경쟁사가 원인이라면 '신규 고객 매출'도 타격을 입었어야 합니다. 마케팅을 통해 신규 고객은 일정하게 유지되고 있습니다. 외부보다 내부 요인이 큽니다."); return; }
+                                            if (s2Hypothesis === 'wrong1') { setErrorFeedback("논리 반박: 경쟁사가 원인이라면 '신규 고객 유입'도 타격을 입었어야 합니다. 신규 고객은 일정하게 유지되고 있습니다. 외부보다 내부 요인이 큽니다."); return; }
                                             if (s2Hypothesis === 'wrong2') { setErrorFeedback("논리 반박: 폐기량 증가(12kg -> 38kg)는 비용 상승의 원인일 뿐, 2천만 원이 넘는 매출 하락폭을 설명하기엔 기여도(Scale)가 너무 작습니다."); return; }
                                             nextStage();
                                         }} 
@@ -357,26 +376,26 @@
 
                         {/* Stage 3: 검증전략 설계 */}
                         {stage === 3 && (
-                            <div className="space-y-8 fade-in">
+                            <div className="space-y-8 fade-in text-left">
                                 <div className="space-y-2">
                                     <h2 className="text-3xl font-black tracking-tight">3. 검증 전략 설계 (Verification Design)</h2>
                                     <p className="text-slate-500 font-medium">수립한 가설("대기시간 증가 -> 단골 이탈")을 증명하기 위해, <strong>어떤 데이터 셋(Set)을 결합하여 분석할 것인지</strong> 설계하십시오.</p>
                                 </div>
 
-                                <div className="bg-white rounded-[24px] border border-slate-200 p-8 shadow-sm">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h4 className="font-bold text-slate-800 flex items-center gap-2"><Icon name="layers" className="text-indigo-500"/> 분석 변수 풀 (Variables Pool)</h4>
+                                <div className="bg-white rounded-[24px] border border-slate-200 p-10 shadow-sm">
+                                    <div className="flex justify-between items-center mb-8">
+                                        <h4 className="font-black text-slate-800 flex items-center gap-2 text-lg"><Icon name="layers" className="text-indigo-500"/> 분석 변수 풀 (Variables Pool)</h4>
                                         <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">정확히 3개 선택 ({s3Strategy.length}/3)</span>
                                     </div>
                                     <div className="flex flex-wrap gap-3 mb-8">
-                                        {['시간대별', '요일별', '연령대별', '평균 대기시간', '신규 유입률', '단골 이탈률', '마케팅 예산', '원재료 폐기량', '고객 만족도(CS)'].map(item => (
+                                        {['시간대별', '요일별', '연령대별', '평균 대기시간', '신규 유입률', '단골 이탈률', '객단가', '원재료 폐기량', '프로모션 참여율'].map(item => (
                                             <button key={item} onClick={() => toggleStrategy(item)} className={`px-5 py-3 rounded-xl border-2 font-bold text-sm transition-all ${s3Strategy.includes(item) ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'border-slate-200 text-slate-600 hover:border-indigo-300'}`}>
                                                 {item} {s3Strategy.includes(item) && <Icon name="check" size={14} className="ml-1" />}
                                             </button>
                                         ))}
                                     </div>
                                     
-                                    <div className="p-6 bg-slate-50 rounded-xl logic-border flex flex-col gap-3">
+                                    <div className="p-6 bg-slate-50 rounded-xl logic-border flex flex-col gap-3 shadow-inner">
                                         <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest">교차 분석 검증 모델</p>
                                         {s3Strategy.length === 0 ? (
                                             <p className="text-slate-400 italic text-sm">추출할 변수를 선택하면 이 곳에 검증 쿼리가 구성됩니다.</p>
@@ -398,7 +417,7 @@
                                             const required = ['시간대별', '평균 대기시간', '단골 이탈률'];
                                             const hasAll = required.every(v => s3Strategy.includes(v));
                                             
-                                            if (!hasAll) { setErrorFeedback(`설계 논리 오류: 선택하신 [${s3Strategy.join(', ')}] 조합으로는 "특정 시점의 병목(대기시간)이 단골 이탈에 미치는 영향"을 증명할 수 없습니다. 원인 지표, 결과 지표, 그리고 이를 그룹화할 기준 지표를 정확히 찾아 매칭하십시오.`); return; }
+                                            if (!hasAll) { setErrorFeedback(`설계 논리 오류: 선택하신 [${s3Strategy.join(', ')}] 조합으로는 가설을 증명할 수 없습니다. 원인, 결과, 기준 지표를 정확히 매칭하십시오.`); return; }
                                             nextStage();
                                         }} 
                                         className="w-full bg-white text-slate-900 py-5 rounded-xl font-black text-lg hover:bg-slate-100 transition-all shadow-xl active:scale-95"
@@ -411,34 +430,34 @@
 
                         {/* Stage 4: 데이터 추출과 해석 */}
                         {stage === 4 && (
-                            <div className="space-y-8 fade-in">
+                            <div className="space-y-8 fade-in text-left">
                                 <div className="space-y-2">
                                     <h2 className="text-3xl font-black tracking-tight">4. 데이터 추출 및 임계점(Threshold) 해석</h2>
-                                    <p className="text-slate-500 font-medium">추출된 교차 분석 차트에서 데이터가 비선형적으로 변하는 <strong>임계점</strong>을 찾아 해석을 완성하십시오.</p>
+                                    <p className="text-slate-500 font-medium leading-relaxed font-medium text-lg">추출된 교차 분석 차트에서 데이터가 비선형적으로 변하는 <strong>임계점</strong>을 찾아 해석을 완성하십시오.</p>
                                 </div>
 
-                                <div className="bg-white p-8 rounded-[24px] shadow-sm border border-slate-200">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-md">분석 뷰: 시간대별 대기시간 및 이탈률 교차분석</h4>
-                                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">데이터 기준: 6월 일평균 POS 로그</span>
+                                <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-200">
+                                    <div className="flex justify-between items-center mb-10">
+                                        <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-full italic">Analysis View: Service Latency x Retention Rate</h4>
+                                        <span className="text-[11px] font-black text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm italic uppercase tracking-tighter">Reference: 6월 일평균 POS 로그</span>
                                     </div>
-                                    <div className="h-80 w-full mb-8">
+                                    <div className="h-80 w-full mb-12">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <BarChart data={chartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 700}} />
-                                                <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{fontSize: 11}} />
-                                                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fontSize: 11}} />
+                                                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 900}} />
+                                                <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{fontSize: 12}} />
+                                                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fontSize: 12}} />
                                                 <Tooltip 
                                                     content={({ active, payload, label }) => {
                                                         if (active && payload && payload.length) {
                                                             const data = payload[0].payload;
                                                             return (
-                                                                <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 shadow-xl text-white text-xs">
-                                                                    <p className="font-black text-indigo-400 mb-2">{label}</p>
-                                                                    <p className="mb-1">평균 대기시간: <span className="text-amber-400 font-bold">{data.wait}분</span></p>
-                                                                    <p className="mb-1">단골 이탈률: <span className="text-red-400 font-bold">{data.churn}%</span></p>
-                                                                    <p className="text-slate-400 mt-2 pt-2 border-t border-slate-700">
+                                                                <div className="bg-slate-900 p-5 rounded-2xl border border-slate-700 shadow-2xl text-white text-sm text-left">
+                                                                    <p className="font-black text-indigo-400 mb-3 border-b border-slate-700 pb-2">{label}</p>
+                                                                    <p className="mb-1">평균 대기시간: <span className="text-amber-400 font-black">{data.wait}분</span></p>
+                                                                    <p className="mb-1">단골 이탈률: <span className="text-red-400 font-black">{data.churn}%</span></p>
+                                                                    <p className="text-slate-400 mt-3 pt-3 border-t border-slate-700 text-xs text-left">
                                                                         상세: 이탈 <span className="text-white font-bold">{data.left}명</span> / 내방 <span className="text-white font-bold">{data.total}명</span>
                                                                     </p>
                                                                 </div>
@@ -447,58 +466,46 @@
                                                         return null;
                                                     }}
                                                 />
-                                                <Bar yAxisId="left" dataKey="churn" name="이탈률(%)" radius={[6, 6, 0, 0]}>
-                                                    { chartData.map((entry, idx) => <Cell key={idx} fill={entry.churn >= 65 ? '#ef4444' : '#e2e8f0'} />)}
-                                                    <LabelList dataKey="churn" position="top" formatter={(val) => val + '%'} style={{ fill: '#ef4444', fontSize: 10, fontWeight: 'bold' }} />
+                                                <Bar yAxisId="left" dataKey="churn" name="이탈률(%)" radius={[8, 8, 0, 0]}>
+                                                    { chartData.map((e, idx) => <Cell key={idx} fill={idx === 1 || idx === 2 ? '#ef4444' : '#e2e8f0'} />)}
+                                                    <LabelList dataKey="churn" position="top" formatter={(val) => val + '%'} style={{ fill: '#ef4444', fontSize: 12, fontWeight: '900' }} />
                                                 </Bar>
-                                                <Line yAxisId="right" type="monotone" dataKey="wait" stroke="#f59e0b" strokeWidth={4} name="대기시간(분)" dot={{r:6}}>
-                                                    <LabelList dataKey="wait" position="bottom" offset={10} formatter={(val) => val + '분'} style={{ fill: '#f59e0b', fontSize: 10, fontWeight: 'bold' }} />
+                                                <Line yAxisId="right" type="monotone" dataKey="wait" stroke="#f59e0b" strokeWidth={5} name="대기시간(분)" dot={{r:8, fill:'#f59e0b', stroke:'#fff', strokeWidth:2}}>
+                                                    <LabelList dataKey="wait" position="bottom" offset={15} formatter={(val) => val + '분'} style={{ fill: '#f59e0b', fontSize: 12, fontWeight: '900' }} />
                                                 </Line>
                                             </BarChart>
                                         </ResponsiveContainer>
                                     </div>
 
-                                    <div className="p-8 bg-slate-900 rounded-2xl text-white shadow-xl space-y-6">
-                                        <p className="text-lg font-bold leading-relaxed flex items-center gap-2">
-                                            <Icon name="edit-3" className="text-amber-400"/> 차트를 해석하여 분석 결론을 완성하십시오.
+                                    <div className="p-10 bg-slate-900 rounded-[32px] text-white shadow-2xl space-y-8 text-left">
+                                        <p className="text-xl font-black leading-relaxed flex items-center gap-3 uppercase italic tracking-tight underline decoration-indigo-500 decoration-4">
+                                            <Icon name="edit-3" className="text-amber-400" size={28}/> Data Interpretation Insight
                                         </p>
                                         
-                                        <div className="flex flex-col gap-4 text-sm md:text-base font-medium bg-slate-800 p-6 rounded-xl border border-slate-700">
-                                            <div className="flex flex-wrap items-center gap-3">
+                                        <div className="flex flex-col gap-6 text-base md:text-lg font-medium bg-slate-800 p-10 rounded-[24px] border border-slate-700 shadow-inner">
+                                            <div className="flex flex-wrap items-center gap-4">
                                                 <span>"차트 분석 결과, 대기 시간이 최고점인</span>
-                                                <input 
-                                                    type="number" 
-                                                    value={s4InputMax}
-                                                    onChange={(e) => setS4InputMax(e.target.value)}
-                                                    placeholder="숫자 입력"
-                                                    className="w-24 p-2 rounded-lg bg-slate-900 border border-slate-600 text-amber-400 font-bold text-center focus:border-amber-500 focus:outline-none"
-                                                />
+                                                <input type="number" value={s4InputMax} onChange={(e) => setS4InputMax(e.target.value)} placeholder="숫자" className="w-24 p-3 rounded-xl bg-slate-900 border-2 border-slate-600 text-amber-400 font-black text-center focus:border-amber-500 focus:outline-none transition-all shadow-md" />
                                                 <span>분을 기록할 때 이탈률은 88%에 달한다.</span>
                                             </div>
-                                            <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-700">
+                                            <div className="flex flex-wrap items-center gap-4 pt-6 border-t border-slate-700 leading-loose">
                                                 <span>더욱 중요한 것은, 이탈률이 비선형적으로 급증(폭발)하기 시작하는 <strong>'심리적 저항 임계점'</strong>은<br/>대략 대기 시간</span>
-                                                <input 
-                                                    type="number" 
-                                                    value={s4InputThreshold}
-                                                    onChange={(e) => setS4InputThreshold(e.target.value)}
-                                                    placeholder="숫자 입력"
-                                                    className="w-24 p-2 rounded-lg bg-slate-900 border border-slate-600 text-red-400 font-bold text-center focus:border-red-500 focus:outline-none"
-                                                />
+                                                <input type="number" value={s4InputThreshold} onChange={(e) => setS4InputThreshold(e.target.value)} placeholder="숫자" className="w-24 p-3 rounded-xl bg-slate-900 border-2 border-slate-600 text-red-400 font-black text-center focus:border-red-500 focus:outline-none transition-all shadow-md" />
                                                 <span>분을 돌파하는 시점부터라는 사실이다."</span>
                                             </div>
                                         </div>
                                         
-                                        {errorFeedback && <p className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 font-bold text-sm leading-relaxed">{errorFeedback}</p>}
+                                        {errorFeedback && <div className="p-5 bg-red-900/50 rounded-2xl text-red-300 font-black text-sm leading-relaxed border border-red-900 shadow-lg animate-pulse">{errorFeedback}</div>}
                                         <button 
                                             onClick={() => {
-                                                if (s4InputMax !== "28") { setErrorFeedback("해석 오류 1: 차트에서 가장 긴 대기 시간(노란 선의 최고점)을 정확히 찾아 입력하십시오."); return; }
-                                                if (s4InputThreshold !== "22") { setErrorFeedback("해석 오류 2: 이탈률(막대 그래프)이 완만하게(18%) 오르다가 기하급수적(65%)으로 치솟기 시작하는 변곡점의 대기 시간을 차트에서 찾아보십시오."); return; }
+                                                if (s4InputMax !== "28") { setErrorFeedback("해석 오류: 차트에서 가장 긴 대기 시간(노란 선의 최고점)을 입력하십시오."); return; }
+                                                if (s4InputThreshold !== "22") { setErrorFeedback("해석 오류: 이탈률이 18%에서 65%로 폭발하는 구간의 대기 시간(노란 선 수치)을 확인하십시오."); return; }
                                                 nextStage();
                                             }} 
-                                            className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black hover:bg-indigo-500 transition-all active:scale-95"
+                                            className="w-full bg-indigo-600 text-white py-6 rounded-2xl font-black text-xl hover:bg-indigo-50 transition-all shadow-2xl active:scale-95"
                                             disabled={!s4InputMax || !s4InputThreshold}
                                         >
-                                            데이터 통찰 확정 및 다음 단계
+                                            데이터 통찰 확정 및 전략 수립 단계로
                                         </button>
                                     </div>
                                 </div>
@@ -507,40 +514,37 @@
 
                         {/* Stage 5: 실행 과제 도출 */}
                         {stage === 5 && (
-                            <div className="space-y-8 fade-in pb-10">
-                                <div className="space-y-2 text-center mb-10">
-                                    <h2 className="text-4xl font-black tracking-tight">5. 실행 과제 도출 (Action Plan)</h2>
-                                    <p className="text-slate-500 font-medium">데이터 해석을 바탕으로, <span className="text-indigo-600 font-bold">'영업이익 흑자 전환'</span>이라는 목표를 달성할 최적의 솔루션을 기획하십시오.</p>
+                            <div className="space-y-12 fade-in pb-20 text-center">
+                                <div className="space-y-4 max-w-3xl mx-auto mb-10">
+                                    <h2 className="text-5xl font-black tracking-tight italic uppercase underline decoration-indigo-200 decoration-8 underline-offset-8">5. 실행 과제 도출</h2>
+                                    <p className="text-slate-500 font-bold text-xl leading-relaxed">데이터 해석을 바탕으로, 비즈니스를 살릴 <strong>최적의 정밀 타격 전략</strong>을 선택하십시오.</p>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                                     {[
-                                        { id: 'opt1', title: '운영 병목 제거 (스마트 오더 전면 도입)', desc: '피크타임 대기 시간을 고객 임계점(22분) 미만인 10분으로 단축시켜, 단골 고객의 이탈을 원천 차단합니다.', impact: '데이터 기반 최적 솔루션' },
-                                        { id: 'opt2', title: '피크타임 전용 간편 메뉴(Ready-to-go) 출시', desc: '대기 시간을 줄일 수 있는 좋은 차선책이나, 기존 객단가를 하락시켜 목표인 영업이익 흑자 전환이 더뎌질 위험이 존재합니다.', impact: '기회비용 손실(차선책)' },
-                                        { id: 'opt3', title: '고객 달래기 (대기 고객 무료 쿠폰 발급)', desc: 'CS 점수는 일시적으로 방어할 수 있으나, 비용 증가로 인해 적자 구조가 심화되며 병목이라는 근본 원인은 그대로 남습니다.', impact: '수단과 목적 전도' },
-                                        { id: 'opt4', title: '비용 절감 (저가 원재료 변경 및 인력 감축)', desc: '당장의 장부상 이익은 개선될지 몰라도, 대기 시간 악화와 품질 저하로 단골 베이스가 완전히 붕괴됩니다.', impact: '논리 비약 최악의 수' }
+                                        { id: 'opt1', title: '운영 병목 제거 (스마트 오더 전면 도입)', desc: '피크타임 대기 시간을 고객 임계점(22분) 미만인 10분 내외로 단축시켜, 단골 고객의 이탈 원인을 원천 차단합니다.', impact: '데이터 기반 최적 솔루션' },
+                                        { id: 'opt2', title: '피크타임 전용 간편 메뉴(Ready-to-go) 출시', desc: '대기 시간을 줄일 수 있는 대안이나, 기존 객단가를 하락시켜 영업이익 개선 속도를 늦출 기회비용이 존재합니다.', impact: '기회비용 손실(차선책)' },
+                                        { id: 'opt3', title: '고객 달래기 (대기 고객 무료 쿠폰 발급)', desc: 'CS 점수는 방어할 수 있으나, 비용 증가로 적자가 심화되며 병목이라는 근본 원인은 그대로 남습니다.', impact: '수단과 목적 전도' },
+                                        { id: 'opt4', title: '브랜드 강화 (메뉴 리뉴얼 및 SNS 홍보)', desc: '신규 유입은 늘릴 수 있으나, 긴 대기 시간이 해결되지 않아 이들 역시 곧 이탈하는 결과를 낳습니다.', impact: '핵심 핀트 어긋남' }
                                     ].map(opt => (
-                                        <button key={opt.id} onClick={() => setFinalDecision(opt.id)} className={`p-8 text-left border-2 rounded-[24px] transition-all relative ${finalDecision === opt.id ? 'border-indigo-600 bg-indigo-50 shadow-lg scale-[1.02]' : 'border-slate-200 bg-white hover:border-indigo-300'}`}>
-                                            <div className="flex justify-between items-start mb-3">
-                                                <span className="text-xl font-black text-slate-900 leading-tight">{opt.title}</span>
+                                        <button key={opt.id} onClick={() => setFinalDecision(opt.id)} className={`p-10 text-left border-4 rounded-[40px] transition-all relative group ${finalDecision === opt.id ? 'border-indigo-600 bg-white shadow-2xl scale-[1.02]' : 'border-slate-100 bg-white hover:border-slate-300 shadow-sm opacity-80 hover:opacity-100'}`}>
+                                            <div className="flex justify-between items-start mb-6">
+                                                <span className="text-2xl font-black italic text-slate-900 leading-tight">{opt.title}</span>
+                                                <span className={`text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest shadow-sm ${finalDecision === opt.id ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>{opt.impact}</span>
                                             </div>
-                                            <p className="text-sm text-slate-600 font-medium leading-relaxed">{opt.desc}</p>
-                                            {finalDecision === opt.id && <span className={`inline-block mt-4 text-[10px] font-bold px-3 py-1 rounded-md uppercase tracking-widest bg-indigo-600 text-white`}>Selected Action</span>}
+                                            <p className="text-base text-slate-500 font-bold leading-relaxed">{opt.desc}</p>
                                         </button>
                                     ))}
                                 </div>
-                                {errorFeedback && <p className="text-red-500 font-bold text-center mt-4 bg-red-50 p-4 rounded-xl">{errorFeedback}</p>}
+                                {errorFeedback && <div className="p-6 bg-red-50 border-2 border-red-200 rounded-[32px] text-red-600 font-black text-center shadow-lg animate-in slide-in-from-top-2">{errorFeedback}</div>}
                                 <button 
                                     onClick={() => {
-                                        if (finalDecision !== 'opt1') {
-                                            setErrorFeedback("경고: 선택하신 솔루션은 데이터가 가리키는 근본 문제(대기시간 임계점 돌파)를 직접적으로 해결하면서 동시에 목표(적자 개선)를 달성하는 최적해(Best Practice)가 아닙니다. 설명(기회비용)을 다시 읽고 재고해 보십시오.");
-                                            return;
-                                        }
+                                        if (finalDecision !== 'opt1') { setErrorFeedback("분석 오류: 당신이 찾은 데이터 임계점을 해결하고, 목표인 '이익 개선'을 동시에 달성하는 최적해를 다시 고려하십시오."); return; }
                                         nextStage();
                                     }} 
-                                    className="w-full mt-8 bg-slate-900 text-white py-6 rounded-[24px] font-black text-xl hover:bg-slate-800 transition-all active:scale-95 shadow-xl disabled:opacity-30" 
+                                    className="w-full mt-10 bg-slate-900 text-white py-8 rounded-[32px] font-black text-2xl hover:bg-indigo-700 transition-all active:scale-95 shadow-2xl disabled:opacity-30 uppercase italic tracking-widest"
                                     disabled={!finalDecision}
                                 >
-                                    최종 데이터 기획 리포트 제출
+                                    최종 기획 리포트 제출 및 시뮬레이션 종료
                                 </button>
                             </div>
                         )}
@@ -548,39 +552,36 @@
                         {/* Stage 6: 결과 화면 */}
                         {stage === 6 && (
                             <div className="min-h-screen bg-slate-900 fixed inset-0 z-[200] flex items-center justify-center p-6 fade-in overflow-auto py-10 scrollbar-hide">
-                                <div className="max-w-3xl w-full bg-white rounded-[40px] overflow-hidden shadow-2xl flex flex-col">
-                                    <div className={`p-16 text-center text-white relative ${finalDecision === 'opt1' ? 'bg-indigo-600' : 'bg-red-600'}`}>
-                                        <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-md shadow-lg border border-white/30">
-                                            <Icon name={finalDecision === 'opt1' ? "check" : "x"} size={40} />
+                                <div className="max-w-4xl w-full bg-white rounded-[60px] overflow-hidden shadow-2xl flex flex-col border-8 border-indigo-600/20">
+                                    <div className="p-20 text-center text-white relative bg-indigo-600 overflow-hidden">
+                                        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                                            <div className="absolute top-10 left-10 w-40 h-40 border-8 border-white rounded-full"></div>
+                                            <div className="absolute bottom-10 right-10 w-60 h-60 border-8 border-white rounded-full"></div>
                                         </div>
-                                        <h2 className="text-4xl font-black mb-2 tracking-tighter uppercase">{finalDecision === 'opt1' ? '기획 성공: 흑자 전환' : '기획 실패: 폐업'}</h2>
-                                        <p className="text-white/80 font-bold text-sm tracking-widest uppercase">{finalDecision === 'opt1' ? '완벽한 논리적 기획 프로세스' : '데이터와 실행 과제의 불일치'}</p>
+                                        <div className="w-24 h-24 bg-white/20 rounded-[40px] flex items-center justify-center mx-auto mb-10 rotate-12 backdrop-blur-md border border-white/30 shadow-2xl">
+                                            <Icon name="award" size={60} />
+                                        </div>
+                                        <h2 className="text-6xl font-black mb-4 tracking-tighter uppercase italic tracking-tight">Project Complete</h2>
+                                        <p className="text-indigo-100 font-black text-2xl tracking-widest uppercase">데이터 기획 역량 인증 (Master Grade)</p>
                                     </div>
-                                    <div className="p-12 flex-1 flex flex-col justify-center">
-                                        <div className="bg-slate-50 p-8 rounded-2xl text-center border border-slate-200 mb-8">
-                                            <h4 className="font-black text-xl text-slate-800 mb-6">시뮬레이션 요약 (Executive Summary)</h4>
-                                            {finalDecision === 'opt1' ? (
-                                                <p className="text-slate-600 text-sm md:text-base leading-relaxed font-medium space-y-4">
-                                                    <span className="block">당신은 마케팅 비용 증가나 CS 점수 하락 같은 <span className="font-bold text-slate-800 bg-slate-200 px-1.5 py-0.5 rounded">함정(Noise)</span>에 속지 않고,<br/>매출 급감의 진짜 원인인 '단골 고객'을 타겟팅했습니다.</span>
-                                                    <span className="block">나아가 고객이 이탈하는 <span className="font-bold text-slate-800 bg-amber-200 px-1.5 py-0.5 rounded">대기 시간 임계점(22분)</span>을 정확히 찾아내어<br/>과감한 시스템 개선(스마트 오더)을 이끌어냈습니다.</span>
-                                                    <span className="block text-indigo-600 font-bold mt-4">이는 논리적 데이터 기획의 완벽한 정석입니다.</span>
-                                                </p>
-                                            ) : (
-                                                <p className="text-slate-600 text-sm md:text-base leading-relaxed font-medium space-y-4">
-                                                    <span className="block">원인(대기 시간으로 인한 단골 이탈)을 정확히 도출해 놓고도,<br/>전혀 상관없는 실행 과제를 선택했습니다.</span>
-                                                    <span className="block text-red-600 font-bold mt-4">기획의 앞뒤 논리가 연결되지 않아 비즈니스 문제는 더욱 악화되었습니다.</span>
-                                                </p>
-                                            )}
+                                    <div className="p-16 flex-1 flex flex-col justify-center">
+                                        <div className="bg-slate-50 p-12 rounded-[48px] text-center border-2 border-slate-200 mb-10 shadow-inner">
+                                            <h4 className="font-black text-3xl text-slate-800 mb-8 border-b-4 border-indigo-100 pb-4 inline-block italic text-center">Executive Summary</h4>
+                                            <p className="text-slate-600 text-lg md:text-xl leading-relaxed font-bold space-y-6 text-left">
+                                                <span className="block italic">"당신은 마케팅비 증가나 CS 점수 하락 같은 <span className="text-slate-900 bg-amber-200 px-2 rounded">표면적 소음(Noise)</span>에 속지 않고,<br/>매출 급감의 진짜 원인인 '단골 고객'과 '대기 시간'의 인과관계를 정확히 좁혀냈습니다."</span>
+                                                <span className="block mt-4">특히 고객이 이탈하는 <span className="text-indigo-600 font-black">심리적 임계점(22분)</span>을 발견한 것은 최고 수준의 데이터 리터러시를 증명하는 결정적 근거입니다.</span>
+                                            </p>
                                         </div>
                                         
-                                        <div className="mt-4 p-8 bg-indigo-50 border border-indigo-200 rounded-3xl text-left">
-                                            <h4 className="font-black text-indigo-900 mb-4 flex items-center gap-2 text-xl"><Icon name="book-open" size={24}/> 학습은 지금부터 시작입니다.</h4>
-                                            <p className="text-sm md:text-base text-indigo-800 mb-8 leading-relaxed">
-                                                왜 특정 선택지가 오답(함정)이었을까요?<br/>내 기획의 흐름 중 어느 부분에서 오류가 발생하기 쉬울까요?<br/><br/>
-                                                <strong>실무 분석가의 관점에서 기획의 5단계 논리를 철저하게 해부하는 복기(Post-Mortem) 리포트</strong>를 꼭 확인하십시오.
+                                        <div className="mt-4 p-10 bg-indigo-50 border-4 border-indigo-100 rounded-[40px] text-left shadow-lg">
+                                            <h4 className="font-black text-indigo-900 mb-6 flex items-center gap-3 text-2xl uppercase italic tracking-widest"><Icon name="book-open" size={32}/> Deep Learning Process</h4>
+                                            <p className="text-lg md:text-xl text-indigo-800 mb-10 leading-relaxed font-bold">
+                                                단순히 문제를 푼 것으로 만족하지 마십시오.<br/>
+                                                실무 분석가의 관점에서 각 기획 단계에 숨겨진 <strong>논리적 함정(Red Herrings)</strong>을<br/>
+                                                철저하게 해체하는 복기 리포트를 반드시 확인하십시오.
                                             </p>
-                                            <button onClick={nextStage} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-lg active:scale-95 text-lg">
-                                                상세 분석 기획 복기 (Post-Mortem) 펼치기
+                                            <button onClick={nextStage} className="w-full py-7 bg-indigo-600 text-white rounded-3xl font-black hover:bg-indigo-700 transition-all shadow-2xl active:scale-95 text-2xl uppercase italic tracking-widest">
+                                                데이터 기획 복기 (Post-Mortem) 시작
                                             </button>
                                         </div>
                                     </div>
@@ -590,78 +591,72 @@
 
                         {/* Stage 7: Post-Mortem (학습 리포트) */}
                         {stage === 7 && (
-                            <div className="space-y-8 fade-in pb-10">
-                                <div className="space-y-2 mb-10 text-center">
-                                    <h2 className="text-4xl font-black tracking-tight flex items-center justify-center gap-3"><Icon name="file-text" className="text-indigo-600" size={36}/> 데이터 분석 기획 복기 리포트</h2>
-                                    <p className="text-slate-500 font-medium text-lg">5단계 기획 과정에서 실무자들이 90% 이상 빠지는 <strong>'논리적 오류의 함정'</strong>을 해부합니다.</p>
+                            <div className="space-y-12 fade-in pb-20 text-left">
+                                <div className="space-y-4 mb-14 text-center">
+                                    <h2 className="text-5xl font-black tracking-tight flex items-center justify-center gap-4 italic uppercase"><Icon name="file-text" className="text-indigo-600" size={48}/> Analysis Post-Mortem</h2>
+                                    <p className="text-slate-500 font-black text-xl tracking-widest">데이터 기획 5단계에 숨겨진 '논리적 오류'를 해체합니다.</p>
                                 </div>
 
-                                <div className="flex flex-col md:flex-row gap-8 items-start">
-                                    {/* 탭 메뉴 */}
-                                    <div className="w-full md:w-1/3 flex flex-col gap-3 sticky top-24">
+                                <div className="flex flex-col md:flex-row gap-10 items-start">
+                                    <div className="w-full md:w-1/3 flex flex-col gap-4 sticky top-24">
                                         {reviewSteps.map((step, idx) => (
-                                            <button 
-                                                key={idx} 
-                                                onClick={() => setReviewTab(idx)}
-                                                className={`p-5 rounded-2xl text-left font-black transition-all border-2 text-sm ${reviewTab === idx ? 'bg-indigo-600 text-white border-indigo-600 shadow-xl translate-x-3' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}
-                                            >
+                                            <button key={idx} onClick={() => setReviewTab(idx)} className={`p-6 rounded-[32px] text-left font-black transition-all border-4 text-base ${reviewTab === idx ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xl translate-x-4' : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-200'}`}>
                                                 {step}
                                             </button>
                                         ))}
-                                        <button onClick={reset} className="mt-10 p-5 bg-slate-900 text-white rounded-2xl font-black hover:bg-slate-800 transition-all text-center flex items-center justify-center gap-2">
-                                            <Icon name="rotate-ccw" /> 처음부터 다시 시작
+                                        <button onClick={reset} className="mt-12 p-6 bg-slate-900 text-white rounded-[32px] font-black hover:bg-indigo-600 transition-all text-center flex items-center justify-center gap-3 text-lg uppercase italic shadow-xl">
+                                            <Icon name="rotate-ccw" /> Re-enter Simulation
                                         </button>
                                     </div>
 
-                                    {/* 탭 콘텐츠 */}
-                                    <div className="w-full md:w-2/3 bg-white rounded-[32px] shadow-sm border border-slate-200 p-8 md:p-12 min-h-[500px]">
+                                    <div className="w-full md:w-2/3 bg-white rounded-[56px] shadow-2xl border-2 border-slate-100 p-12 md:p-16 min-h-[600px] flex flex-col justify-center">
                                         {reviewTab === 0 && (
-                                            <div className="space-y-6 fade-in">
-                                                <h3 className="text-3xl font-black text-slate-800 mb-4 border-b-4 border-indigo-100 pb-4">1단계: 지표의 위계 (목적 vs 수단)</h3>
-                                                <p className="text-slate-600 leading-relaxed text-lg font-medium">많은 기획자들이 문제 정의 시 '고객 만족도 9점 달성'처럼 표면적인 수단(선행지표)을 목적(후행지표)으로 착각합니다.</p>
-                                                <div className="p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
-                                                    <p className="font-black text-indigo-700 mb-3 text-lg">💡 실무적 Insight</p>
-                                                    <p className="text-base leading-relaxed text-slate-700">문제 정의의 기준은 <strong>항상 최상위 재무 지표(영업이익)</strong>에 맞춰져야 합니다. 또한 대상을 '포장 고객'이나 전체 매출로 두루뭉술하게 잡지 않고, 데이터 시트에서 매출 하락을 주도한 핵심 환부인 '재방문 고객'으로 정확히 좁혀낸(Narrow-down) 것이 이번 기획 성공의 첫 단추였습니다.</p>
+                                            <div className="space-y-8 fade-in">
+                                                <h3 className="text-4xl font-black text-slate-900 mb-6 border-b-8 border-indigo-100 pb-6 italic">1. 문제 정의의 함정</h3>
+                                                <p className="text-slate-600 leading-relaxed text-xl font-bold">표면적인 CS 점수 하락이나 마케팅 효율에 속으셨나요?</p>
+                                                <div className="p-8 bg-indigo-50 rounded-[32px] border-4 border-indigo-100 shadow-inner">
+                                                    <p className="font-black text-indigo-700 mb-4 text-2xl italic tracking-tighter">💡 Professional Insight</p>
+                                                    <p className="text-lg leading-relaxed text-slate-700 font-bold text-left text-left">문제 정의는 <strong>목적(영업이익)과 수단(CS점수)을 분리</strong>하는 것에서 시작합니다. '포장 고객'이라는 오답을 피하고 '재방문 단골'이라는 핵심 환부를 쪼개어(Segmentation) 본 것이 성공의 핵심입니다.</p>
                                                 </div>
                                             </div>
                                         )}
                                         {reviewTab === 1 && (
-                                            <div className="space-y-6 fade-in">
-                                                <h3 className="text-3xl font-black text-slate-800 mb-4 border-b-4 border-indigo-100 pb-4">2단계: 표면적 현상 vs 근본 원인</h3>
-                                                <p className="text-slate-600 leading-relaxed text-lg font-medium">경쟁사 오픈, CS 점수 하락 등 눈에 띄는 자극적인 현상에 매몰되면 '확증 편향'에 빠집니다.</p>
-                                                <div className="p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
-                                                    <p className="font-black text-indigo-700 mb-3 text-lg">💡 실무적 Insight</p>
-                                                    <p className="text-base leading-relaxed text-slate-700">CS 점수 하락은 원인이 아니라, 단골들이 겪은 불만(긴 대기시간)이 표출된 결과적 <strong>현상(Symptom)</strong>일 뿐입니다. 데이터 기획자는 현상을 원인으로 착각하여 "친절 교육을 강화하자"는 식의 오류를 피하고, <strong>인과관계(Causality)</strong>를 지닌 진짜 원인(Root Cause)인 대기시간을 가설로 세워야 합니다.</p>
+                                            <div className="space-y-8 fade-in">
+                                                <h3 className="text-4xl font-black text-slate-900 mb-6 border-b-8 border-indigo-100 pb-6 italic">2. 가설의 논리적 배제</h3>
+                                                <p className="text-slate-600 leading-relaxed text-xl font-bold">경쟁사가 나타나면 무조건 경쟁사 때문일까요?</p>
+                                                <div className="p-8 bg-indigo-50 rounded-[32px] border-4 border-indigo-100 shadow-inner">
+                                                    <p className="font-black text-indigo-700 mb-4 text-2xl italic tracking-tighter">💡 Professional Insight</p>
+                                                    <p className="text-lg leading-relaxed text-slate-700 font-bold text-left text-left text-left">데이터 분석가는 <strong>'기여도(Scale)'</strong>를 봅니다. 폐기량 증가로 인한 비용 손실보다 매출 하락폭이 압도적으로 큽니다. 경쟁사 오픈에도 '신규 매출'이 일정하다면, 문제는 외부가 아닌 내부의 <strong>서비스 병목(대기 시간)</strong>에 있었던 것입니다.</p>
                                                 </div>
                                             </div>
                                         )}
                                         {reviewTab === 2 && (
-                                            <div className="space-y-6 fade-in">
-                                                <h3 className="text-3xl font-black text-slate-800 mb-4 border-b-4 border-indigo-100 pb-4">3단계: 검증 모델의 필수 조건</h3>
-                                                <p className="text-slate-600 leading-relaxed text-lg font-medium">상관관계를 입증하려면 원인(X축)과 결과(Y축), 그리고 이를 묶어줄 환경(통제 변수)이 필요합니다.</p>
-                                                <div className="p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
-                                                    <p className="font-black text-indigo-700 mb-3 text-lg">💡 실무적 Insight</p>
-                                                    <p className="text-base leading-relaxed text-slate-700">가설이 "대기시간 증가가 단골 이탈을 불렀다"라면, 단순히 대기시간 평균만 봐서는 증명할 수 없습니다. <strong>[시간대별]</strong>이라는 환경을 설정하고, 그 안에서 <strong>[대기시간(X)]</strong>과 <strong>[이탈률(Y)]</strong>이 어떻게 함께 움직이는지 '교차 분석(Cross-tabulation)'해야만 경영진을 설득할 수 있는 단단한 논리가 완성됩니다.</p>
+                                            <div className="space-y-8 fade-in text-left">
+                                                <h3 className="text-4xl font-black text-slate-900 mb-6 border-b-8 border-indigo-100 pb-6 italic text-left">3. 검증 모델의 필수 조건</h3>
+                                                <p className="text-slate-600 leading-relaxed text-xl font-bold">데이터를 뭉쳐서(Aggregation) 보면 아무것도 보이지 않습니다.</p>
+                                                <div className="p-8 bg-indigo-50 rounded-[32px] border-4 border-indigo-100 shadow-inner">
+                                                    <p className="font-black text-indigo-700 mb-4 text-2xl italic tracking-tighter">💡 Professional Insight</p>
+                                                    <p className="text-lg leading-relaxed text-slate-700 font-bold text-left text-left text-left text-left text-left">"대기시간이 문제다"라는 가설을 증명하려면 반드시 <strong>[시간대별]</strong>이라는 비교 그룹이 필요합니다. 한산한 오전의 대기시간과 피크타임의 대기시간을 이탈률과 교차 분석해야만 비로소 데이터는 말을 하기 시작합니다.</p>
                                                 </div>
                                             </div>
                                         )}
                                         {reviewTab === 3 && (
-                                            <div className="space-y-6 fade-in">
-                                                <h3 className="text-3xl font-black text-slate-800 mb-4 border-b-4 border-indigo-100 pb-4">4단계: 임계점(Threshold)의 발견</h3>
-                                                <p className="text-slate-600 leading-relaxed text-lg font-medium">데이터는 비례적으로 선형(Linear) 이동하지 않고 특정 지점에서 폭발(Exponential)합니다.</p>
-                                                <div className="p-6 bg-amber-50 rounded-2xl border border-amber-200">
-                                                    <p className="font-black text-amber-700 mb-3 text-lg">💡 핵심 역량 Insight</p>
-                                                    <p className="text-base leading-relaxed text-slate-700">초보자는 "대기시간 28분이 제일 문제다"라고만 해석합니다. 하지만 진정한 기획자는 <strong>"대기시간이 22분을 넘기는 순간부터 고객 이탈률이 18%에서 65%로 기하급수적으로 폭발(임계점 돌파)한다"</strong>는 것을 찾아냅니다. 이 임계점을 알아야 "우리는 대기시간을 무조건 20분 밑으로 줄여야 한다"는 명확한 실행 KPI가 나옵니다.</p>
+                                            <div className="space-y-8 fade-in text-left">
+                                                <h3 className="text-4xl font-black text-slate-900 mb-6 border-b-8 border-indigo-100 pb-6 italic text-left text-left">4. 임계점(Threshold)의 발견</h3>
+                                                <p className="text-slate-600 leading-relaxed text-xl font-bold">데이터 기획의 고수는 '특이점'을 찾아냅니다.</p>
+                                                <div className="p-8 bg-amber-50 rounded-[32px] border-4 border-amber-200 shadow-inner">
+                                                    <p className="font-black text-amber-700 mb-4 text-2xl italic tracking-tighter">🔥 Core Competency</p>
+                                                    <p className="text-lg leading-relaxed text-slate-700 font-bold text-left text-left text-left text-left text-left text-left text-left">대기시간이 14분일 때 이탈률은 18%였지만, 22분이 되자 65%로 폭발했습니다. 이는 고객의 심리적 마지노선이 20분 내외임을 뜻합니다. <strong>단순히 "빨리 만들자"가 아니라 "무조건 20분 안쪽으로 들어와야 한다"는 구체적인 KPI</strong>를 도출하는 것이 실력입니다.</p>
                                                 </div>
                                             </div>
                                         )}
                                         {reviewTab === 4 && (
-                                            <div className="space-y-6 fade-in">
-                                                <h3 className="text-3xl font-black text-slate-800 mb-4 border-b-4 border-indigo-100 pb-4">5단계: 기회비용과 솔루션 일치</h3>
-                                                <p className="text-slate-600 leading-relaxed text-lg font-medium">분석을 완벽히 해놓고도, 당장 눈앞의 비용을 줄이는 오판(원가 절감/쿠폰 남발)을 하는 경우가 흔합니다.</p>
-                                                <div className="p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
-                                                    <p className="font-black text-indigo-700 mb-3 text-lg">💡 실무적 Insight</p>
-                                                    <p className="text-base leading-relaxed text-slate-700">문제정의(1단계)에서 우리의 목표는 '적자 구조 개선'이었습니다. 간편 메뉴 출시는 대기시간은 줄이겠지만 객단가를 낮춰 이익 개선을 더디게 하는 기회비용을 낳습니다. 매출을 까먹고 있는 <strong>진짜 병목(대기 시간)을 근본적으로 뚫어주기 위해 시스템(스마트 오더)에 투자</strong>하여 단골을 복귀시키는 것이, 데이터를 기반으로 한 최고의 전략적 의사결정입니다.</p>
+                                            <div className="space-y-8 fade-in text-left">
+                                                <h3 className="text-4xl font-black text-slate-900 mb-6 border-b-8 border-indigo-100 pb-6 italic text-left text-left text-left">5. 기회비용과 솔루션 일치</h3>
+                                                <p className="text-slate-600 leading-relaxed text-xl font-bold">분석은 논리적으로 해놓고, 실행은 '싼 것'만 찾지 않았나요?</p>
+                                                <div className="p-8 bg-indigo-50 rounded-[32px] border-4 border-indigo-100 shadow-inner">
+                                                    <p className="font-black text-indigo-700 mb-4 text-2xl italic tracking-tighter">💡 Professional Insight</p>
+                                                    <p className="text-lg leading-relaxed text-slate-700 font-bold text-left text-left text-left text-left text-left text-left text-left text-left">적자 개선을 위해서는 매출을 갉아먹는 '근본 병목'을 뚫어야 합니다. 쿠폰 발행이나 저가 원재료 사용은 당장의 수치는 바꿀지 모르나 브랜드 신뢰도를 더 빠르게 무너뜨립니다. 데이터를 믿고 <strong>시스템적 투자(스마트 오더)</strong>를 결단하는 것이 전략적 사고입니다.</p>
                                                 </div>
                                             </div>
                                         )}
@@ -671,14 +666,14 @@
                         )}
                     </main>
 
-                    {/* 하단 고정 플로팅 버튼 (이전으로 가기 & 데이터 시트) */}
+                    {/* 하단 고정 플로팅 버튼바 */}
                     {stage > 0 && stage < 6 && (
                         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex gap-4 z-50">
-                            <button onClick={prevStage} className="px-6 py-4 bg-white/90 backdrop-blur-md text-slate-600 border border-slate-200 rounded-full font-black text-sm hover:bg-slate-100 shadow-xl flex items-center gap-2 transition-all hover:scale-105">
-                                <Icon name="arrow-left" size={18}/> 이전 단계
+                            <button onClick={prevStage} className="px-10 py-5 bg-white/90 backdrop-blur-md text-slate-500 border border-slate-200 rounded-[32px] font-black text-sm uppercase tracking-widest hover:bg-slate-100 shadow-2xl flex items-center gap-3 transition-all hover:scale-105 active:scale-95">
+                                <Icon name="arrow-left" size={20}/> Back
                             </button>
-                            <button onClick={() => setShowDataSheet(true)} className="px-6 py-4 bg-indigo-600/90 backdrop-blur-md text-white border border-indigo-500 rounded-full font-black text-sm hover:bg-indigo-700 shadow-xl flex items-center gap-2 transition-all hover:scale-105">
-                                <Icon name="table" size={18}/> 원본 데이터 보기
+                            <button onClick={() => setShowDataSheet(true)} className="px-10 py-5 bg-indigo-600 text-white rounded-[32px] font-black text-sm uppercase tracking-widest hover:bg-indigo-700 shadow-2xl flex items-center gap-3 transition-all hover:scale-105 active:scale-95 shadow-indigo-500/30">
+                                <Icon name="table" size={20}/> View Raw Data Sheet
                             </button>
                         </div>
                     )}
